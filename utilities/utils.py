@@ -2352,11 +2352,17 @@ class Application(object):
         self.settings = Options()
         self.settingsFile = ('%s.%s_%s.lastrun'
                              % (TMP_DIR, self.name, getpass.getuser()))
+        self.config = {}
+        self.config_filename = None
         self.__setDefaultParams()
         self.menu = supermenu.Menu()
         self.preserveArgs = preserveArgs
         if self.preserveArgs:
             self.__preserveArgs()
+
+
+    def loadConfig(self):
+        logger.critical('Method not implemented. See utils 2.7 for minimal implementation')
 
     def debug(self):
         return self.__isDebug()

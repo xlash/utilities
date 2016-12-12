@@ -124,3 +124,23 @@ def parallel(instance, method_name="", progress=None,
                 #                 text_progress=method_name)
         except:
             logger.error('parallel :: cannot update_progress', exc_info=Logger.isDebug())
+
+
+def loadConfig(self):
+    yaml_config = {}
+    conf = ""
+    try:
+        if self.config_filename and os.path.isfile(self.config_filename):
+            conf = self.config_filename
+        else:
+            conf = self.name + '.conf'
+        with open(conf) as config_file:
+            yaml_config = yaml.load(config_file.read())
+    except:
+        logger.error('Configuration file was not loaded properly. %s' %
+                     (conf))
+    if yaml_config != {}:
+        self.config = yaml_config
+
+# Python 2.7+ code.
+Application.loadConfig = loadConfig
