@@ -1,5 +1,6 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import code
-import commands
 from datetime import datetime as dt
 import datetime
 from datetime import timedelta as td
@@ -9,17 +10,22 @@ import getpass
 import gzip
 import inspect
 import logging
-import md5
+from hashlib import md5
 import os
 import re
 import socket
 import string
-import StringIO
 import struct
 import sys
 import time
 import traceback
+import subprocess
 from pprint import pprint
+import six
+from six.moves import map
+from six.moves import range
+from six.moves import zip
+from six.moves import input
 
 REGEXP_IPADDRESS_FULL = r'[0-9]{1,3}(?:\.[0-9]{1,3}){3}'
 
@@ -80,7 +86,13 @@ class PyVersionError(Exception):
     pass
 
 if pythonVersionMin(2,5,raiseIfNotMet = False):
-    from utils2_5 import *
+    from .utils2_5 import *
+
+if pythonVersionMin(3,0,raiseIfNotMet = False):
+    from io import StringIO
+    from io import TextIOWrapper as file
+else:
+    from StringIO import StringIO
 
 # END IMPORTS.
 # BEGIN CONSTANTS
@@ -142,11 +154,11 @@ class Logger(object):
         """
         # For compatibility with non-multiprocessing host 
         from F5.lib.external.multiprocessing_logging import multiprocessing_logging
-        print "Trying to apply multiprocessing logger"
+        print("Trying to apply multiprocessing logger")
         logger.critical("Trying to apply multiprocessing logger")
         for logger_name, logger_obj in logging.Logger.manager.loggerDict.items():
             if logger_name[0:4]=='GNM.':
-                print ("Trying to apply multiprocessing logger on %s" % (logger_name))
+                print(("Trying to apply multiprocessing logger on %s" % (logger_name)))
                 logger_obj = logging.getLogger(logger_name)
                 multiprocessing_logging.install_mp_handler(logger_obj)
 
@@ -219,7 +231,7 @@ class Logger(object):
 
     @classmethod
     def get_loggers(cls):
-        return logging.Logger.manager.loggerDict.items()
+        return list(logging.Logger.manager.loggerDict.items())
 
     @classmethod
     def get_loggers_level(cls):
@@ -231,14 +243,14 @@ class Logger(object):
                             GNM.lib.f5utils 10
                             GNM.lib.utils 10
         """
-        print "RootLogger=%s lvl=%s" % (cls.root_logger.level, cls.root_logger.level)
+        print(("RootLogger=%s lvl=%s" % (cls.root_logger.level, cls.root_logger.level)))
         for handler in cls.root_logger.handlers:
-            print ("    %s  :: %s" % (handler.level, handler))
+            print(("    %s  :: %s" % (handler.level, handler)))
         for logger_name, logger_obj in sorted(Logger.get_loggers()):
             try:
-                print "%s %s" % (logger_name, logger_obj.level)
+                print(("%s %s" % (logger_name, logger_obj.level)))
                 for handler in logger_obj.handlers:
-                    print ("    %s  :: %s" % (handler.level, handler))
+                    print(("    %s  :: %s" % (handler.level, handler)))
             except:
                 pass
 
@@ -330,7 +342,7 @@ def set_loggers_lvl(logger_lvl):
 
 def get_loggers():
     logger.warning('DEPRECATED use utils.Logger.get_loggers()')
-    return logging.Logger.manager.loggerDict.items()
+    return list(logging.Logger.manager.loggerDict.items())
 
 
 def get_loggers_level():
@@ -345,14 +357,14 @@ def get_loggers_level():
     """
     for logger_name, logger_obj in get_loggers():
         try:
-            print logger_name, logger_obj.level
+            print((logger_name, logger_obj.level))
         except:
             pass
 
 logGod = Logger(__name__)
 logger = logGod.logger()
 # PRELOAD menu, after logger definition.
-import menu as supermenu
+from . import menu as supermenu
 
 
 class ArgTypeException(Exception):
@@ -387,34 +399,34 @@ def accepts(exception=ArgTypeException, **types):
     NoneType is usable via type(None)
     """
     def check_accepts(f):
-        assert len(types) == f.func_code.co_argcount, \
-        'accept number of arguments not equal with function number of arguments in "%s"' % f.func_name
+        assert len(types) == f.__code__.co_argcount, \
+        'accept number of arguments not equal with function number of arguments in "%s"' % f.__name__
         @functools.wraps(f)
         def new_f(*args, **kwds):
             for i, v in enumerate(args):
-                if types.has_key(f.func_code.co_varnames[i]) :
+                if f.__code__.co_varnames[i] in types :
                     # GuillaumeNM 2016-09
                     # for not yet defined classes.
                     # FIXME not supported in tuples like (str, int, 'MyCustObj')
-                    if isinstance(types[f.func_code.co_varnames[i]], str):
-                        if types[f.func_code.co_varnames[i]] != v.__class__.__name__:
+                    if isinstance(types[f.__code__.co_varnames[i]], str):
+                        if types[f.__code__.co_varnames[i]] != v.__class__.__name__:
                             raise exception("arg '%s'=%s does not match %s" % \
-                                (f.func_code.co_varnames[i],v.__class__.__name__,types[f.func_code.co_varnames[i]]))
-                            del types[f.func_code.co_varnames[i]]
+                                (f.__code__.co_varnames[i],v.__class__.__name__,types[f.__code__.co_varnames[i]]))
+                            del types[f.__code__.co_varnames[i]]
                     # Normal path
                     else:
-                        if not isinstance(v, types[f.func_code.co_varnames[i]]):
+                        if not isinstance(v, types[f.__code__.co_varnames[i]]):
                             raise exception("arg '%s'=%r does not match %s" % \
-                                (f.func_code.co_varnames[i],v,types[f.func_code.co_varnames[i]]))
-                            del types[f.func_code.co_varnames[i]]
+                                (f.__code__.co_varnames[i],v,types[f.__code__.co_varnames[i]]))
+                            del types[f.__code__.co_varnames[i]]
 
-            for k, v in kwds.iteritems():
-                if types.has_key(k) and not isinstance(v, types[k]):
+            for k, v in six.iteritems(kwds):
+                if k in types and not isinstance(v, types[k]):
                     raise exception("arg '%s'=%r does not match %s" % \
                         (k,v,types[k]))
 
             return f(*args, **kwds)
-        new_f.func_name = f.func_name
+        new_f.__name__ = f.__name__
         new_f.__doc__ = f.__doc__
         return new_f
     return check_accepts
@@ -494,21 +506,21 @@ class Options(object):
         elif isinstance(options_dict, dict):
             ###Parse the debug value
             debug = False
-            if options_dict.has_key('_debug'):
+            if '_debug' in options_dict:
                 debug = options_dict.pop('_debug')
-            if options_dict.has_key('debug'):
+            if 'debug' in options_dict:
                 debug = options_dict.pop('debug')
-            if options_dict.has_key('is_debug'):
+            if 'is_debug' in options_dict:
                 debug = options_dict.pop('is_debug')
             options_dict['_debug'] = debug
             # This is to avoid setattr and getattr recursion loop. See Stackoverflow q 16237659
             super(Options, self).__setattr__('attributes', options_dict)
         else:
             super(Options, self).__setattr__('attributes', {})
-        for key, value in kwargs.iteritems():
+        for key, value in six.iteritems(kwargs):
                 self.attributes[key]=value
         # Recursive approach to dictionnary to build multiple Options object
-        for key, value in self.attributes.iteritems():
+        for key, value in six.iteritems(self.attributes):
             if isinstance(value, dict):
                 self.attributes[key] = Options(value)
 
@@ -528,7 +540,7 @@ class Options(object):
         if name == 'debug' or name == '_debug' or name == 'is_debug':
             return True
         else:
-            return self.attributes.has_key(name)
+            return name in self.attributes
 
     def __getitem__(self, name):
         return self.__getattr__(name)
@@ -549,7 +561,7 @@ class Options(object):
         elif name == 'debug' or name == '_debug' or name == 'is_debug':
             # print "1- debug"
             return self.attributes['_debug']
-        elif self.attributes.has_key(name):
+        elif name in self.attributes:
             return self.attributes[name]
         elif name[0:3]=='is_':
             return False
@@ -625,7 +637,7 @@ def ip_to_hex(ip_addr, reverse = False):
     array_of_octets = ip_addr.split('.')
     if reverse:
         array_of_octets.reverse()
-    return '{:02X}{:02X}{:02X}{:02X}'.format(*map(int, array_of_octets))
+    return '{:02X}{:02X}{:02X}{:02X}'.format(*list(map(int, array_of_octets)))
 
 
 # '2013-11-30 17:18:12.556954
@@ -664,14 +676,14 @@ def format(array_of_array, header_array, options=None, stdout=None):
             file_handler = options['file_handler']
             output_to_file = True
         if not output_to_file:
-            # guillaumeNM 2016-08 Replaced StringIO.StringIO() by sys.stdout
+            # guillaumeNM 2016-08 Replaced StringIO() by sys.stdout
             # Forgot why it was there in the first place.
             file_handler = sys.stdout
         # 2016-08 Easier stdout support than assuming sys.stdout...
         if stdout is not None:
             file_handler = stdout
         if 'returnValue' in options:
-            file_handler = StringIO.StringIO()
+            file_handler = StringIO()
         formatArr = []
         for i in range(0, len(array_of_array[0])):
             # Loop through each row to find longest element of each column
@@ -721,7 +733,7 @@ def format(array_of_array, header_array, options=None, stdout=None):
                 else:
                     file_handler.write(str(array[i]) + (formatArr[i]+1-len(str(array[i])))*" ")
             file_handler.write("\n")
-        if 'returnValue' in options and isinstance(file_handler, StringIO.StringIO):
+        if 'returnValue' in options and isinstance(file_handler, StringIO):
             file_handler.seek(0)
             return file_handler.read()
     except:
@@ -735,7 +747,7 @@ def dicts_add(x, y):
         else:
             raise 'Both objects needs to be dicts received x = ' + str(x) + ' & y = '+str(y)
         for key in y.keys():
-            if z.has_key(key):
+            if key in z:
                 if z[key].__class__.__name__=='dict' and y[key].__class__.__name__=='dict':
                     # recursive call. Dangerous and exciting at the same time.
                     z[key]=dicts_add(z[key],y[key])
@@ -745,7 +757,7 @@ def dicts_add(x, y):
                     try:
                         z[key]=int(y[key])+int(z[key])
                     except:
-                        print "Unable to merge these 2 objects together : " + z.__class__.__name__  + ' ' + str(z[key]) + '::' + y.__class__.__name__ + ' ' + str(y[key] ) 
+                        print(("Unable to merge these 2 objects together : " + z.__class__.__name__  + ' ' + str(z[key]) + '::' + y.__class__.__name__ + ' ' + str(y[key] )))
             else:
                 z[key] = y[key]
     except:
@@ -771,17 +783,18 @@ def find_line_number_for_x_min_ago(filename, mins_ago, actual_time = None,
         # fixes in time datetime.now()
         if actual_time == None:
             actual_time = datetime.datetime.now()
-        if o._debug:
-            print "actual_time = " + str(actual_time)
+        logger.debug("actual_time = " + str(actual_time))
         if not os.path.isfile(filename):
             raise Exception("File does not exist" + filename)
-        file_length = int(commands.getoutput("wc -l "+ filename).split()[0])
+        cmd = "wc -l "+ filename
+        file_length = int(subprocess.Popen([
+                cmd],
+                shell=True, stdout=subprocess.PIPE).stdout.read().split()[0])
         left_ix = 0
         right_ix = file_length
 
         if file_length < 2:
-            if o._debug:
-                print "File too small. Returning line # 1"
+            logger.debug("File too small. Returning line # 1")
             return 1
         current_ix = file_length/2
         time_target = actual_time-td(0, mins_ago*60)
@@ -803,15 +816,15 @@ def find_line_number_for_x_min_ago(filename, mins_ago, actual_time = None,
             raise Exception('Utils_find_line_number_for_x_min_ago    Cannot '
                             'locate convert_date.awk script. Attempted search'
                             ' location is :'+ awk_path)
-        if o._debug:
-            print "Utils_find_line_number_for_x_min_ago::awk_path" + awk_path
+        logger.debug("Utils_find_line_number_for_x_min_ago::awk_path" + awk_path)
         while current_ix != left_ix and current_ix != right_ix:
-            if o._debug:
-                print "current_ix = " + str(current_ix)
+            logger.debug("current_ix = " + str(current_ix))
             sed_cmd = ("sed -n '%sp;%sq' %s| gawk -v year=%s -f %s" 
                        % (current_ix, current_ix+1, filename,
                           actual_time.year, awk_path))
-            line = commands.getoutput(sed_cmd)
+            line = subprocess.Popen([
+                sed_cmd],
+                shell=True, stdout=subprocess.PIPE).stdout.read()
             line_datetime = " ".join(line.split()[0:2])
             current_line_datetime = dt.fromtimestamp(time.mktime(time.strptime(line_datetime, F5_TIME_FORMAT)))
             if (current_line_datetime - time_target).seconds < 10 or (time_target - current_line_datetime).seconds < 10:
@@ -832,9 +845,8 @@ def find_line_number_for_x_min_ago(filename, mins_ago, actual_time = None,
                             'ago. Out of bounds, need debugging. Args = %s' 
                             % (inspect.getargvalues(inspect.currentframe())))
         if match_ix != -1 :
-            if o._debug:
-                print ("find_line_number_for_x_min_ago :: This is the matching"
-                       " line " + line)
+            logger.debug("find_line_number_for_x_min_ago :: This is the matching"
+                         " line " + line)
     except:
         logger.exception("find_line_number_for_x_min_ago::Exception  ")
     return match_ix
@@ -908,15 +920,15 @@ def check_obj_type_is_or_raise(*args, **kwargs):
                               type=
                     optionnal msg=
      Usage is check_obj_type_is_or_raise(obj = object.instance, type = 'list' [,msg = 'This is not a list ! ']) """
-    if kwargs.has_key('obj') and kwargs.has_key('type'):
+    if 'obj' in kwargs and 'type' in kwargs:
         if kwargs['obj'].__class__.__name__==kwargs['type']:
             return True
-        elif kwargs.has_key('msg'):
+        elif 'msg' in kwargs:
             raise TypeError(kwargs['msg'])
         else:
             return False
     else:
-        print "check_obj_type_is_or_raise::Usage is check_obj_type_is_or_raise(obj = object.instance, type = 'list' [,msg = 'This is not a list ! ']) "
+        logger.info("check_obj_type_is_or_raise::Usage is check_obj_type_is_or_raise(obj = object.instance, type = 'list' [,msg = 'This is not a list ! ']) ")
 
 
 def d_print(msg, indentation_lvl=0, debug_lvl=0):
@@ -926,7 +938,7 @@ def d_print(msg, indentation_lvl=0, debug_lvl=0):
     if "_debug" in globals():
         if (("_debug_level" not in globals()) or
             "_debug_level" in globals() and _debug_level >= debug_lvl):
-            print indentation(indentation_lvl)+msg
+            logger.info(indentation(indentation_lvl)+msg)
 
 
 # http://stackoverflow.com/questions/3160699/python-progress-bar
@@ -1058,44 +1070,44 @@ def menu(array_of_dict_menu, options = None):
         global _debug
     else:
         _debug = False
-    if options.has_key('debug') and options['debug']:
+    if 'debug' in options and options['debug']:
         _debug = True
     if _debug:
-        print "Main menu"
+        print("Main menu")
     stay_in_main_menu = True
     while stay_in_main_menu:
         id = 0
-        print "==================MENU======================"
+        print("==================MENU======================")
         for item in array_of_dict_menu:
-            print str(id)+"- " + item['title']
+            print((str(id)+"- " + item['title']))
             id+=1
-        print "d- Debug - Do not use unless you come from Montreal, and are 6'2\""
-        print "     ---------------------------------      "
-        print "Q- Exit"
-        print "============================================"
+        print("d- Debug - Do not use unless you come from Montreal, and are 6'2\"")
+        print("     ---------------------------------      ")
+        print("Q- Exit")
+        print("============================================")
         try:
-            selection = raw_input("What do you want to do next? :") 
+            selection = input("What do you want to do next? :") 
             answer = selection
             if strIsDigit(answer) and len(array_of_dict_menu)>int(answer):
                 item_menu = array_of_dict_menu[int(answer)]
                 try:
                     item_menu['callback_method']()
                 except:
-                    print "Error in menu callback_method"
-                    print "     ==>" + str(sys.exc_info()[0]) + " :: " + str(sys.exc_info()[1]) + str(traceback.extract_tb(sys.exc_info()[2]))
+                    print("Error in menu callback_method")
+                    print(("     ==>" + str(sys.exc_info()[0]) + " :: " + str(sys.exc_info()[1]) + str(traceback.extract_tb(sys.exc_info()[2]))))
             elif answer == 'Q' or answer == 'q':
                 stay_in_main_menu = False
                 sys.exit(1)
             # elif answer == 'd':
             else:
-                print "What what in the Butt ? You said :" + answer + "??"
+                print(("What what in the Butt ? You said :" + answer + "??"))
         except KeyboardInterrupt:
-            print '\nOh... No parlo Americano.'
+            print('\nOh... No parlo Americano.')
             stay_in_main_menu = False
             sys.exit()
         except:
-            print "Unhandled major error. Probably a MSWindows IRQ error, propagated through quantum finite space. \n If all goes wrong, do not contact the author of this script, he probably doesn't care anymore about it.\n If you are the author of this script, fix your shit." 
-            print "     ==>" + str(sys.exc_info()[0]) + " :: " + str(sys.exc_info()[1]) + str(traceback.extract_tb(sys.exc_info()[2]))
+            print("Unhandled major error. Probably a MSWindows IRQ error, propagated through quantum finite space. \n If all goes wrong, do not contact the author of this script, he probably doesn't care anymore about it.\n If you are the author of this script, fix your shit." )
+            print(("     ==>" + str(sys.exc_info()[0]) + " :: " + str(sys.exc_info()[1]) + str(traceback.extract_tb(sys.exc_info()[2]))))
 
 
 def strIsDigit(string):
@@ -1124,9 +1136,9 @@ def multiple_level_hash(current_hash, array_of_keys, count):
         Created by : GuillaumeNM 2016-01
     """
     if not isinstance(current_hash, {}):
-        print "hash parameter must be of dict type. "
+        print("hash parameter must be of dict type. ")
     if len(array_of_keys) == 0:
-        print "array_of_keys length 0"
+        print("array_of_keys length 0")
     current_key = array_of_keys.pop(0)
     current_hash
     if current_key in current_hash:
@@ -1281,7 +1293,7 @@ class intelligent_file_parsing_for(object):
         command = command.replace('FILENAME',filename)
         self.updated_byte_count = max_byte_count
         if Logger.is_debug():
-            print 'Updated command = ' + command
+            print('Updated command = ' + command)
         self.command = command
 
     def get_results(self):
@@ -1291,7 +1303,9 @@ class intelligent_file_parsing_for(object):
     def get_currentresults(self):
         """Return current results
         """
-        status,self.currentresults = commands.getstatusoutput(self.command)
+        status,self.currentresults = subprocess.Popen([
+                self.command],
+                shell=True, stdout=subprocess.PIPE).stdout.read()
         return self.currentresults
     def update_results(self, results):
         # Write results
@@ -1328,8 +1342,6 @@ This class is use compare in time certain values. You can define after how long 
 class monitor_over_time:
     def __init__(self,command,delta_minutes,update_frequency_minutes,log_name,options = None):
         """ update_frequency_minutes= num of minutes before updating in a new results save. For example, do you want precision up to the minute for an hourly threshold?"""
-        import re,commands,sys,traceback,md5
-        from datetime import datetime as dt
         if not options: options={}
         _debug = False
         self.previous_results={}
@@ -1364,11 +1376,11 @@ class monitor_over_time:
                 if self.results_dict[key]["date"]>candidate["date"]:
                     candidate = self.results_dict[key]
                     if _debug:
-                        print "New candidate found= " + str(candidate["date"])
+                        print("New candidate found= " + str(candidate["date"]))
         ####
         if candidate != None:
             if _debug:
-                print "candidate = " + str(candidate)
+                print("candidate = " + str(candidate))
             candidate['delete']=False
             if (dt.now()-candidate["date"]).seconds > uptime():
                 self.discard_previous_results = True
@@ -1376,10 +1388,10 @@ class monitor_over_time:
             self.previous_results = candidate['result']
         else:
             if _debug:
-                print "No candidate found"
+                print("No candidate found")
         if self.discard_previous_results:
             if _debug:
-                print "Resetting stats"
+                print("Resetting stats")
             self.reset()
         self.command = command
     def load_prev_results(self):
@@ -1397,7 +1409,7 @@ class monitor_over_time:
                     self.results_dict[date_str]['delete']=False
                 except:
                     if self._debug:
-                        print line+"     ==>" + str(sys.exc_info()[0]) + " :: " + str(sys.exc_info()[1]) + str(traceback.extract_tb(sys.exc_info()[2]))
+                        print(line+"     ==>" + str(sys.exc_info()[0]) + " :: " + str(sys.exc_info()[1]) + str(traceback.extract_tb(sys.exc_info()[2])))
     def get_results(self):
         """Return previous results and last_run_Time
         """
@@ -1405,7 +1417,9 @@ class monitor_over_time:
     def get_currentresults(self):
         """Return current results
         """
-        status,self.currentresults = commands.getstatusoutput(self.command)
+        status,self.currentresults = subprocess.Popen([
+                self.command],
+                shell=True, stdout=subprocess.PIPE).stdout.read()
         self.baseline_new_time = dt.now()
         return self.currentresults
     def write_results_if_required(self, results):
@@ -1413,13 +1427,13 @@ class monitor_over_time:
         # Verify if this result must be write. Depends on init__
         if self.results_to_write:
             if self._debug:
-                print "Writing results"
+                print("Writing results")
             # Delete Old entries
             for key in self.results_dict.keys():
                 if self.results_dict[key]["delete"]:
                     deleted_val = self.results_dict.pop(key)
                     if self._debug:
-                        print "Deleting old object ="  + str(deleted_val)
+                        print("Deleting old object ="  + str(deleted_val))
             # Write results
             file_res = gzip.open(self.results_file,'w+')
             # Write old results, not expired
@@ -1429,7 +1443,7 @@ class monitor_over_time:
             file_res.write( str(dt.strftime(self.baseline_new_time,TIME_FORMAT)) + " " + str(results)  + '\n' )
             file_res.close()
         elif self._debug:
-            print "Not writing result"
+            print("Not writing result")
     def reset(self):
         # Write results
         file_res = gzip.open(self.results_file,'w+')
@@ -1442,7 +1456,7 @@ class monitor_over_time:
         f2.write("")
         f2.close()
         ############ 
-        print "Results successfully reseted"
+        print("Results successfully reseted")
 
 def normalize_unix_filename(filename):
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
@@ -1475,7 +1489,7 @@ def addressInNetwork(ip, network_n_mask):
             if netmask == netmask & (4294967295 << (32-int(bits))-1):
                 return ipaddr_masked == netmask
             else:
-                print "****WARNING**** Network",netaddr,"not valid with mask /"+bits
+                print("****WARNING**** Network",netaddr,"not valid with mask /"+bits)
                 return ipaddr_masked == netmask        
     except:
         raise socket.error('illegal IP address string passed to Utils::addressInNetwork')
@@ -1503,7 +1517,10 @@ class LinuxServer(object):
     def crontab_verify(options=None):
         if options is None:
             options = {}
-        results = commands.getoutput("crontab -l")
+        cmd = "crontab -l"
+        results = subprocess.Popen([
+                cmd],
+                shell=True, stdout=subprocess.PIPE).stdout.read()
         total = exec_total = err = 0
         for line in results.splitlines():
             try:
@@ -1533,7 +1550,9 @@ class LinuxServer(object):
         """
         # 2016-08 Added _hostname for unittest
         if cls._hostname is None:
-            return commands.getoutput('hostname')
+            return subprocess.Popen([
+                "hostname"],
+                shell=True, stdout=subprocess.PIPE).stdout.read()
         else:
             return cls._hostname
 
@@ -1564,14 +1583,14 @@ class Hosts(Options):
         self.load_host_file()
 
     def __getattr__(self, key):
-        if key.upper() in self.attributes.keys():
+        if key.upper() in list(self.attributes.keys()):
             return self.attributes[key.upper()]
         else:
             try:
                 return self.attributes[key]
             except:
                 matches = []
-                for hostname, ipaddress in self.attributes.iteritems():
+                for hostname, ipaddress in six.iteritems(self.attributes):
                     if ipaddress == key:
                         matches.append(hostname)
                 if matches != []:
@@ -1598,8 +1617,7 @@ class Hosts(Options):
                 _hostsAliases = []
                 # logger.debug("Hosts::load_host_file host_data=%s"
                 #              % (host_data))
-                modified_array = filter(lambda a: a != '',
-                                        re.split(r'[ \t,]', host_data))
+                modified_array = [a for a in re.split(r'[ \t,]', host_data) if a != '']
                 # Skip empty lines, or commented
                 if len(modified_array) < 2 or host_data[0] == "#":
                     continue
@@ -1726,7 +1744,7 @@ def aliased(aliased_class):
         i.coolMethod() # equivalent to i.myKinkyMethod() and i.boring_method()
     """
     original_methods = aliased_class.__dict__.copy()
-    for name, method in original_methods.iteritems():
+    for name, method in six.iteritems(original_methods):
         if hasattr(method, '_aliases'):
             # Add the aliases for 'method', but don't override any
             # previously-defined attribute of 'aliased_class'
@@ -2103,7 +2121,7 @@ def apply_textfsm_template(template_filename='', template_text='', data=''):
         textfsm_template = template_text
         postprocessing_template = ""
     try:
-        template_fh = StringIO.StringIO(textfsm_template)
+        template_fh = StringIO(textfsm_template)
     except:
         logger.error('Unable to create StringIO FH for text=%s' % (template_text))
 
@@ -2112,7 +2130,7 @@ def apply_textfsm_template(template_filename='', template_text='', data=''):
         InfluxDB_TIME_FORMAT='%Y-%m-%dT%H:%M:%S.%fZ'
         textfsm_parser = textfsm.TextFSM( template_fh )
         parsed_text = textfsm_parser.ParseText( data )
-        list_of_dict = [dict(zip(textfsm_parser.header,line)) for line in parsed_text]
+        list_of_dict = [dict(list(zip(textfsm_parser.header,line))) for line in parsed_text]
         for result in list_of_dict:
             json_body = {}
             json_body['tags'] = {}
@@ -2185,12 +2203,12 @@ def textfsmParse(template, data):
         logger.error('How come Im here???')
     if not isinstance(template, file):
         try:
-            template_fh = StringIO.StringIO(template_text)
+            template_fh = StringIO(template_text)
         except:
             logger.error('Unable to create StringIO FH for text=%s' % (template_text))
     textfsm_parser = textfsm.TextFSM(template_fh)
     parsed_text = textfsm_parser.ParseText(data)
-    list_of_dict = [dict(zip(textfsm_parser.header,line)) for line in parsed_text]
+    list_of_dict = [dict(list(zip(textfsm_parser.header,line))) for line in parsed_text]
     return list_of_dict
 
 
@@ -2259,9 +2277,9 @@ def applyPostProcessingTemplate(postProcessingTemplate, json_bodies):
             for json_body in json_bodies:
                 logger.log(5,'    json_body=%s ' % (json_body))
                 if validation_type != 'default':
-                    if json_body['tags'].has_key(key_target):
+                    if key_target in json_body['tags']:
                         tag_or_field = json_body['tags'][key_target]
-                    elif json_body['fields'].has_key(key_target):
+                    elif key_target in json_body['fields']:
                         tag_or_field = json_body['fields'][key_target]
                     else:
                         continue
@@ -2390,7 +2408,7 @@ class Application(object):
         logLvl = Logger.setLogLevelFromVerbose(self.args)
         self._debug = Logger.toggle_debug_all(level = logLvl)
         if self.args.version:
-            print self.getVersion()
+            print(self.getVersion())
             sys.exit(0)
 
     def loadSettings(self):
@@ -2530,7 +2548,7 @@ def dropTheMic(globs, locls):
     Usage requires globals() and locals() to be given.
     """
     try:
-        res = raw_input('Do you want to go to debug '
+        res = input('Do you want to go to debug '
                         'console (Y or N) ?')
         if res.lower() == 'y':
             code.interact(local=dict(globs, **locls),
@@ -2599,7 +2617,5 @@ def isHeritingFrom(instance, typeName):
         klassName = typeName.__name__
     else:
         klassName = typeName
-    matchingClasses = filter(
-        lambda x: x.__name__ == klassName,
-        inspect.getmro(klass))
+    matchingClasses = [x for x in inspect.getmro(klass) if x.__name__ == klassName]
     return len(matchingClasses) > 0

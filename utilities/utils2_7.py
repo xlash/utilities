@@ -7,7 +7,7 @@ Requires Python 2.7
 # To support relative module import
 # if __name__ == '__main__':
 #     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from utils import *
+from utilities.utils import *
 
 from decorator import decorate
 

@@ -2,7 +2,7 @@ import copy
 import re
 import os
 import sys
-import utils
+from utilities import utils
 
 
 logGod = utils.Logger(__name__)
@@ -10,6 +10,10 @@ logger = logGod.logger()
 
 MENU_LENGTH = 80
 
+# Retro compatibility for Python 2.
+if utils.pythonVersionMin(majorVersion=2, minorVersion=0, raiseIfNotMet=False,
+                          majorVersionMustMatch=True):
+    input = raw_input
 
 class Menu(object):
     ALLOWED_ATTRIBUTES = ['name', 'description', 'prompt', 'initialPrompt',
@@ -29,7 +33,7 @@ class Menu(object):
         self.prompt = 'Please select an other option:'
         self.stdout = sys.stdout
         self.quitMessage = 'Quit'
-        self.inputMethod = raw_input
+        self.inputMethod = input
         self.locals = locals
         for key, value in kwargs.items():
             if key in Menu.ALLOWED_ATTRIBUTES:
@@ -79,7 +83,7 @@ class Menu(object):
     def display(self, debugLocals=None, inputMethod=None):
         """
         Input values
-            inputMethod : Stub for Unittests, to replace raw_input()
+            inputMethod : Stub for Unittests, to replace input()
             debugLocals : for debug console, overwrite this menu locals()
         return
             returnValues [('selection',
@@ -89,7 +93,7 @@ class Menu(object):
             debugLocals = locals()
         o = self.stdout
         if not inputMethod:
-            inputMethod = raw_input
+            inputMethod = input
         returnValues = []
         while True:
             # Clear screen
