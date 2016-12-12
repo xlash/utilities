@@ -2478,10 +2478,10 @@ class Application(object):
         Method used to avoid toggling argParser, for unittests own argParser
         """
         self.parser.add_argument("other_args", nargs='*', help="""Examples:
-  f5utils.unittests.py                               - run default set of tests
-  f5utils.unittests.py MyTestSuite                   - run suite 'MyTestSuite'
-  f5utils.unittests.py MyTestCase.testSomething      - run MyTestCase.testSomething
-  f5utils.unittests.py MyTestCase                    - run all 'test*' test methods
+  mylib.unittests.py                               - run default set of tests
+  mylib.unittests.py MyTestSuite                   - run suite 'MyTestSuite'
+  mylib.unittests.py MyTestCase.testSomething      - run MyTestCase.testSomething
+  mylib.unittests.py MyTestCase                    - run all 'test*' test methods
                                                in MyTestCase
             """)
 
