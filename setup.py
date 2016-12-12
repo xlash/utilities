@@ -1,9 +1,9 @@
 from setuptools import find_packages, setup
 
-from utils import __version__
+from utilities import __version__
 
 setup(
-    name='utils',
+    name='utilities',
     version=__version__,
     license='BSD',
     author='GNM',
