@@ -30,7 +30,7 @@ def accepts(exception=ArgTypeException, **types):
     Usage :
     @u.accepts(Exception,a=int,b=list,c=(str,unicode))
     def test(a,b=None,c=None)
-        print 'ok'
+        print('ok')
 
     test(13,c=[],b='df')
     >Exception
@@ -51,7 +51,7 @@ def accepts(exception=ArgTypeException, **types):
         assert len(types) == f.func_code.co_argcount, \
         'accept number of arguments not equal with function number of arguments in "%s"' % f.func_name
         def new_f(func, *args, **kwds):
-            # print "args=" + str(args)
+            # print("args=" + str(args))
             for i, v in enumerate(args):
                 if f.func_code.co_varnames[i] in types:
                     # GuillaumeNM 2016-09-06 Workaround to support str
