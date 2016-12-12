@@ -2353,7 +2353,7 @@ class Application(object):
         self.settingsFile = ('%s.%s_%s.lastrun'
                              % (TMP_DIR, self.name, getpass.getuser()))
         self.config = {}
-        self.config_filename = None
+        self.configFilename = None
         self.__setDefaultParams()
         self.menu = supermenu.Menu()
         self.preserveArgs = preserveArgs

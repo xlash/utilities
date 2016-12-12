@@ -130,8 +130,8 @@ def loadConfig(self):
     yaml_config = {}
     conf = ""
     try:
-        if self.config_filename and os.path.isfile(self.config_filename):
-            conf = self.config_filename
+        if self.configFilename and os.path.isfile(self.configFilename):
+            conf = self.configFilename
         else:
             conf = self.name + '.conf'
         with open(conf) as config_file:
