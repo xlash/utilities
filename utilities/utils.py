@@ -2384,6 +2384,7 @@ class Application(object):
             if ('other_args' in dir(self.args) and
                self.args.other_args is not None):
                 sys.argv[1:] = self.args.other_args
+        self.loadConfig()
 
     def getVersion(self):
         vStr = "VERSION=%s BUILD_DATE=%s" % (self.version, self.buildDate)
