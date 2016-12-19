@@ -2376,7 +2376,7 @@ class Application(object):
     def __isDebug(self):
         return Logger.is_debug()
 
-    def start(self):
+    def start(self, callbackMethod=None, *args, **kwargs):
         """At the moment, it only parse the params"""
         self.__parseParams()
         if self.__preserveArgs:
@@ -2385,6 +2385,15 @@ class Application(object):
                self.args.other_args is not None):
                 sys.argv[1:] = self.args.other_args
         self.loadConfig()
+        if callbackMethod:
+            try:
+                callbackMethod(*args, **kwargs)
+            except KeyboardInterrupt:
+                logger.info('Received CTRL+C. Interrupting.')
+            except SystemExit:
+                logger.debug('Received SystemExit Exiting.')
+            except:
+                raise
 
     def getVersion(self):
         vStr = "VERSION=%s BUILD_DATE=%s" % (self.version, self.buildDate)
