@@ -2393,6 +2393,9 @@ class Application(object):
             except SystemExit:
                 logger.debug('Received SystemExit Exiting.')
             except:
+                if self.__isDebug():
+                    logger.exception('Application, received unhandled crash.')
+                    dropTheMic(globals(), locals())
                 raise
 
     def getVersion(self):
