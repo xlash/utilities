@@ -2309,7 +2309,14 @@ def applyPostProcessingTemplate(postProcessingTemplate, json_bodies):
 
 
 class Application(object):
-    """Generic framework for new application/script"""
+    """
+    Generic framework for new application/script
+
+    self.args = Parsed arguments
+    self.settings = Current running settings.
+    self.config = Configuration loaded from file
+
+    """
 
     def __init__(self, preserveArgs=False, **kwargs):
         """
@@ -2336,6 +2343,7 @@ class Application(object):
         self.logger = self.logGod.logger()
         self.parser = None
         self.args = Options()
+        self.interactive = True
         # Default Application standard output
         self.stdout = sys.stdout
         self.stderr = sys.stderr
@@ -2393,10 +2401,11 @@ class Application(object):
             except SystemExit:
                 logger.debug('Received SystemExit Exiting.')
             except:
-                if self.__isDebug():
+                if self.interactive:
                     logger.exception('Application, received unhandled crash.')
                     dropTheMic(globals(), locals())
-                raise
+                else:
+                    raise
 
     def getVersion(self):
         vStr = "VERSION=%s BUILD_DATE=%s" % (self.version, self.buildDate)
@@ -2561,7 +2570,7 @@ def __loadCfg(configFilename):
                          exc_info=Logger.isDebug())
         return confObj
 
-def dropTheMic(globs, locls):
+def dropTheMic(globs, locls, banner='DropTheMic debug mode'):
     """
     Use to drop to a console mode.
     Usage requires globals() and locals() to be given.
@@ -2571,7 +2580,7 @@ def dropTheMic(globs, locls):
                         'console (Y or N) ?')
         if res.lower() == 'y':
             code.interact(local=dict(globs, **locls),
-                          banner="ANTS::debug")
+                          banner=banner)
     except KeyboardInterrupt:
         pass
     except:
@@ -2638,3 +2647,20 @@ def isHeritingFrom(instance, typeName):
         klassName = typeName
     matchingClasses = [x for x in inspect.getmro(klass) if x.__name__ == klassName]
     return len(matchingClasses) > 0
+
+
+class NeverMatchException(Exception):
+    '''An exception class that is never raised by any code anywhere
+    http://stackoverflow.com/questions/8146386/python-conditionally-catching-exceptions
+    try:
+        10/0
+    except (Exception if False else NeverMatchException) as e:
+        print 'Should not match' + str(e)
+    except (Exception if True else NeverMatchException) as e:
+        print 'Handled error' + str(e)
+    except ZeroDivisionError:
+        print 'zero division error handled'
+    except Exception as e:
+        print 'no match' + str(e)
+    Use case: Handle error only in certain conditions, like if in interactive mode.
+'''
