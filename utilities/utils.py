@@ -2562,7 +2562,7 @@ class defaultdict(dict):
             return self.__missing__(key)
 
 # Try to load a JSON config file if available
-def __loadCfg(configFilename):
+def loadCfg(configFilename):
     """
     return conf object
     """
@@ -2615,7 +2615,7 @@ try:
 except:
     configFilename = '.config'
 
-conf = __loadCfg(configFilename)
+conf = loadCfg(configFilename)
 logger.debug('Loading the following global config file %s'
              % (os.path.abspath(configFilename)))
 
