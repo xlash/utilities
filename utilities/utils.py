@@ -110,6 +110,7 @@ class Logger(object):
             logger = logGod.logger()
             logger.debug('Log away !! ')
     Default to default logger  which defaults to logging.WARNING
+    Why use this class? I control all logging in the world, I support multiprocessing logging, and I am the ruler of all the levels !
     """
     # Default global level
     level = logging.WARNING
@@ -120,7 +121,7 @@ class Logger(object):
             raise Exception('empty name')
         root_level = Logger.level
         if root_level == 0:
-            root_level = logging.INFO
+            root_level = logging.WARNING
         self._loggername = name
         if os.getcwd()[-4:] == '/lib':
             filename = '../log/'+name+'.log'
@@ -647,6 +648,20 @@ def to_d(datetime_string):
     mSeconds = datetime.timedelta(microseconds=int(mSecs))
     fullDateTime = dt + mSeconds
     return str(fullDateTime)
+
+
+def printTable(myDict, colList=None):
+   """ Pretty print a list of dictionaries (myDict) as a dynamically sized table.
+   If column names (colList) aren't specified, they will show in random order.
+   Author: Thierry Husson - Use it as you want but don't blame me.
+   """
+   if not colList: colList = list(myDict[0].keys() if myDict else [])
+   myList = [colList] # 1st row = header
+   for item in myDict: myList.append([str(item[col] or '') for col in colList])
+   colSize = [max(map(len,col)) for col in zip(*myList)]
+   formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
+   myList.insert(1, ['-' * i for i in colSize]) # Seperating line
+   for item in myList: print(formatStr.format(*item))
 
 
 def format(array_of_array, header_array, options=None, stdout=None):
@@ -2424,6 +2439,11 @@ class Application(object):
         parser.add_argument("-V", "--version",
                             help="Returns the program version",
                             action="store_true")
+        parser.add_argument("-b", "--batch",
+                            help="Program is not running in interactive mode.",
+                            action="store_true",
+                            dest="interactive",
+                            default=True)
         self.parser = parser
 
     def __parseParams(self):
@@ -2434,10 +2454,12 @@ class Application(object):
         """
         self.args = self.parser.parse_args()
         logLvl = Logger.setLogLevelFromVerbose(self.args)
-        self._debug = Logger.toggle_debug_all(level = logLvl)
+        self._debug = Logger.toggle_debug_all(level=logLvl)
         if self.args.version:
             print(self.getVersion())
             sys.exit(0)
+        self.interactive = self.args.interactive
+
 
     def loadSettings(self):
         """
