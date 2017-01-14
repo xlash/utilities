@@ -2697,10 +2697,10 @@ class F5Exception(Exception):
 def is_F5(raiseIfFalse=False):
     """returns boolean if the script is running on an F5"""
     is_f5_cmd = "tmsh -v"
-    cmd_status, result = subprocess.Popen([
+    result = subprocess.Popen([
                 is_f5_cmd],
-                shell=True, stdout=subprocess.PIPE).stdout.read().split()[0]
-    if cmd_status == 0 and result.find('The current TMSH version')!=-1:
+                shell=True, stdout=subprocess.PIPE).stdout.read().split()
+    if len(result) == 1 and result[0].find('The current TMSH version')!=-1:
         return True
     if raiseIfFalse:
         raise F5Exception('This is no F5 baby!')
