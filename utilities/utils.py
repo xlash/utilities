@@ -2562,7 +2562,7 @@ class defaultdict(dict):
             return self.__missing__(key)
 
 # Try to load a JSON config file if available
-def loadCfg(configFilename):
+def __loadCfg(configFilename):
     """
     return conf object
     """
@@ -2615,7 +2615,7 @@ try:
 except:
     configFilename = '.config'
 
-conf = loadCfg(configFilename)
+conf = __loadCfg(configFilename)
 logger.debug('Loading the following global config file %s'
              % (os.path.abspath(configFilename)))
 
@@ -2686,3 +2686,20 @@ class NeverMatchException(Exception):
         print 'no match' + str(e)
     Use case: Handle error only in certain conditions, like if in interactive mode.
 '''
+
+
+class F5Exception(Exception):
+
+    def __init__(self, message):
+        self.message = message
+
+
+def is_F5(raiseIfFalse=False):
+    """returns boolean if the script is running on an F5"""
+    is_f5_cmd = "tmsh -v"
+    cmd_status,result = commands.getstatusoutput(is_f5_cmd)
+    if cmd_status == 0 and result.find('The current TMSH version')!=-1:
+        return True
+    if raiseIfFalse:
+        raise F5Exception('This is no F5 baby!')
+    return False
