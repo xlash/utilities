@@ -154,7 +154,7 @@ class Logger(object):
         Does not work yet. Copy of the multiprocessing_log snipplet I used.
         """
         # For compatibility with non-multiprocessing host 
-        from F5.lib.external.multiprocessing_logging import multiprocessing_logging
+        import multiprocessing_logging
         print("Trying to apply multiprocessing logger")
         logger.critical("Trying to apply multiprocessing logger")
         for logger_name, logger_obj in logging.Logger.manager.loggerDict.items():
