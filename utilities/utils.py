@@ -2699,7 +2699,7 @@ def is_F5(raiseIfFalse=False):
     is_f5_cmd = "tmsh -v"
     result = subprocess.Popen([
                 is_f5_cmd],
-                shell=True, stdout=subprocess.PIPE).stdout.read().split()
+                shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.read().split()
     if len(result) == 1 and result[0].find('The current TMSH version')!=-1:
         return True
     if raiseIfFalse:
