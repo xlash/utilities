@@ -1829,9 +1829,9 @@ def Manager():
 def _init_worker(loglevel=None):
     """For signal handling. Use by work_in_parallel"""
     try:
-        from external.multiprocessing_logging import multiprocessing_logging
+        import multiprocessing_logging
     except:
-        logger.warning('Cannot import external.multiprocessing_logging. Multiprocess logging will not work')
+        logger.warning('Cannot import multiprocessing_logging. Multiprocess logging will not work')
     import signal
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     Logger.toggle_debug_all(loglevel)
