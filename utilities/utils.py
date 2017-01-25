@@ -364,8 +364,6 @@ def get_loggers_level():
 
 logGod = Logger(__name__)
 logger = logGod.logger()
-# PRELOAD menu, after logger definition.
-from . import menu as supermenu
 
 
 class ArgTypeException(Exception):
@@ -2347,6 +2345,9 @@ class Application(object):
             name = <str>
 
         """
+        # PRELOAD menu, to avoid recursion of imports
+        from . import menu as supermenu
+
         logger.debug(os.path.basename(__file__))
         self.useArgParser = True
         self.history = ''

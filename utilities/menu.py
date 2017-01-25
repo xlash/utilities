@@ -2,7 +2,7 @@ import copy
 import re
 import os
 import sys
-import utils
+from utilities import utils
 
 
 logGod = utils.Logger(__name__)
