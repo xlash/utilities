@@ -2363,6 +2363,7 @@ class Application(object):
         # Default Application standard output
         self.stdout = sys.stdout
         self.stderr = sys.stderr
+        self.configFilename = None
         # Set kwargs to attributes
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -2377,7 +2378,6 @@ class Application(object):
         self.settingsFile = ('%s.%s_%s.lastrun'
                              % (TMP_DIR, self.name, getpass.getuser()))
         self.config = {}
-        self.configFilename = None
         self.__setDefaultParams()
         self.menu = supermenu.Menu()
         self.preserveArgs = preserveArgs
