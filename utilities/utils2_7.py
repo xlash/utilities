@@ -48,34 +48,47 @@ def accepts(exception=ArgTypeException, **types):
     NoneType is usable via type(None)
     """
     def _check_accepts(f):
-        assert len(types) == f.func_code.co_argcount, \
-        'accept number of arguments not equal with function number of arguments in "%s"' % f.func_name
+        if pythonVersionMin(2, 0, raiseIfNotMet=False, majorVersionMustMatch=True, description=""):
+            funcCode = f.func_code
+            funcName = f.func_name
+        else:
+            funcCode = f.__code__
+            funcName = f.__name__
+        assert len(types) == funcCode.co_argcount, \
+        'accept number of arguments not equal with function number of arguments in "%s"' % funcName
         def new_f(func, *args, **kwds):
             # print("args=" + str(args))
             for i, v in enumerate(args):
-                if f.func_code.co_varnames[i] in types:
+                if funcCode.co_varnames[i] in types:
                     # GuillaumeNM 2016-09-06 Workaround to support str
                     # for not yet defined classes.
                     # FIXME not supported in tuples like (str, int,'MyCustObj')
-                    if isinstance(types[f.func_code.co_varnames[i]], str):
-                        if types[f.func_code.co_varnames[i]] != v.__class__.__name__:
+                    if isinstance(types[funcCode.co_varnames[i]], str):
+                        if types[funcCode.co_varnames[i]] != v.__class__.__name__:
                             raise exception("arg '%s'=%s does not match %s" % \
-                                (f.func_code.co_varnames[i],v.__class__.__name__,types[f.func_code.co_varnames[i]]))
-                            del types[f.func_code.co_varnames[i]]
+                                (funcCode.co_varnames[i],v.__class__.__name__,types[funcCode.co_varnames[i]]))
+                            del types[funcCode.co_varnames[i]]
                     # Normal path
                     else:
-                        if not isinstance(v, types[f.func_code.co_varnames[i]]):
+                        if not isinstance(v, types[funcCode.co_varnames[i]]):
                             raise exception("arg '%s'=%r does not match %s" % \
-                                (f.func_code.co_varnames[i],v,types[f.func_code.co_varnames[i]]))
-                            del types[f.func_code.co_varnames[i]]
+                                (funcCode.co_varnames[i],v,types[funcCode.co_varnames[i]]))
+                            del types[funcCode.co_varnames[i]]
+            if pythonVersionMin(2, 0, raiseIfNotMet=False, majorVersionMustMatch=True, description=""):
+                iterIt = kwds.iteritems()
+            else:
+                iterIt = iter(kwds.items())
 
-            for k, v in kwds.iteritems():
+            for k, v in iterIt:
                 if types.has_key(k) and not isinstance(v, types[k]):
                     raise exception("arg '%s'=%r does not match %s" % \
                         (k,v,types[k]))
 
             return func(*args, **kwds)
-        new_f.func_name = f.func_name
+        if pythonVersionMin(2, 0, raiseIfNotMet=False, majorVersionMustMatch=True, description=""):
+            new_f.func_name = funcName
+        else:
+            new_f.__name__ = funcName
         new_f.__doc__ = f.__doc__
         return decorate(f, new_f)
     return _check_accepts
