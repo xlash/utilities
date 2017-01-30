@@ -177,7 +177,7 @@ class Logger(object):
         elif args.verbose == 2:
             lvl = 10
         elif args.verbose >= 3:
-            lvl = 0
+            lvl = 10
         else:
             logger.critical("UNEXPLAINED NEGATIVE COUNT!")
             lvl = "ERROR"
