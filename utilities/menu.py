@@ -16,8 +16,62 @@ if utils.pythonVersionMin(majorVersion=2, minorVersion=0, raiseIfNotMet=False,
     input = raw_input
 
 class Menu(object):
-    ALLOWED_ATTRIBUTES = ['name', 'description', 'prompt', 'initialPrompt',
-                          'app', 'locals', 'stdout', 'quitMessage']
+    """
+    Example :
+        def main(app):
+            try:
+                logger.debug('ANTSParser starting')
+                parser = Parser(app=app)
+                while parser.displayMenu and not app.args.is_batchMode:
+                    app.menu.items = []
+                    app.menu.addItem(description='Modify files= %s'
+                                     % (parser.app.settings.fileregex),
+                                     callback=parser.setFiles,
+                                     returnToMenu=False)
+                    app.menu.addItem(description='Modify regexp Filters= %s'
+                                     % (parser.app.settings.extractRegexp),
+                                     callback=parser.setRegexp,
+                                     returnToMenu=False)
+                    app.menu.addItem(description='Modify regexp testsCasesName= %s'
+                                     % (parser.app.settings.testsCasesName),
+                                     callback=parser.setTestcaseFilter,
+                                     returnToMenu=False)
+                    app.menu.addItem(description='Modify Directory= %s'
+                                     % (parser.app.settings.directory),
+                                     callback=parser.setDirectory,
+                                     returnToMenu=False)
+                    app.menu.addItem(description='Export to fileName= %s'
+                                     % (parser.app.settings.outFileName),
+                                     callback=parser.setOutFileName,
+                                     returnToMenu=False)
+                    app.menu.addSpacer()
+                    app.menu.addItem(description='List tests cases name!', callback=parser.listTC,
+                                     returnToMenu=False,
+                                     menuSelector='t')
+                    app.menu.addItem(description='Run that shit!', callback=parser.run,
+                                     returnToMenu=False,
+                                     menuSelector='R')
+                    app.menu.addSpacer()
+                    app.menu.addItem(description='Shitty print it',
+                                     callback=parser.export,
+                                     kwargs={'exportType': 'print'},
+                                     returnToMenu=False,
+                                     menuSelector='P')
+                    app.menu.addSpacer()
+                    app.menu.addItem(description='Load previous settings',
+                                     callback=parser.app.loadSettings,
+                                     returnToMenu=False,
+                                     menuSelector='L')
+                    app.menu.addItem(description='Save settings',
+                                     callback=parser.app.saveSettings,
+                                     returnToMenu=False,
+                                     menuSelector='S')
+                    app.menu.display(debugLocals=locals())
+                    logger.debug('Menu is refreshed')
+            except (KeyboardInterrupt, SystemExit):
+                raiseOWED_ATTRIBUTES = ['name', 'description', 'prompt', 'initialPrompt',
+                                  'app', 'locals', 'stdout', 'quitMessage']
+    """
 
     def __init__(self, **kwargs):
         """
