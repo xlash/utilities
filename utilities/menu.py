@@ -181,6 +181,7 @@ class Menu(object):
                 selection = selection.lower()
                 logger.debug('MENU:: received selection=%s' % (selection))
                 item = None
+                skipCallback = False
                 if re.match(r'\d+', selection):
                     if int(selection) in range(0, i):
                         item = self.items[int(selection)]
@@ -189,8 +190,10 @@ class Menu(object):
                     raise SystemExit(0)
                 elif selection == 'd':
                     utils.Logger.toggle_debug_all(10)
+                    skipCallback = True
                 elif selection == 'dc':
                     import code
+                    skipCallback = True
                     # for live debugging , with local and global namespace.
                     code.interact(local=dict(globals(), **debugLocals))
                 else:
@@ -210,7 +213,9 @@ class Menu(object):
                     logger.exception('Unable to pick correct selection.')
                 else:
                     logger.error('Unable to pick correct selection.')
-            if not item:
+            if skipCallback:
+                continue
+            elif not item:
                 logger.warning('Invalid menu option :%s'
                                % (selection))
                 continue
