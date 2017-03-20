@@ -130,7 +130,7 @@ class Menu(object):
         """
         Add a Menu spacer item
         """
-        if len(self.items)>0:
+        if len(self.items) > 0:
             # Add last iterm as the spacer limit
             self.spacers.append(self.items[-1])
 
@@ -153,8 +153,8 @@ class Menu(object):
             # Clear screen
             os.system('cls' if os.name == 'nt' else 'clear')
             # FIXME GuillaumeNM Prints weird char [3;J
-            o.write("\n%sMENU%s\n" % ('='*((MENU_LENGTH-4)/2),
-                                      '='*((MENU_LENGTH-4)/2)))
+            o.write("\n%sMENU%s\n" % ('=' * int((MENU_LENGTH - 4) / 2),
+                                      '=' * int((MENU_LENGTH - 4) / 2)))
             i = 0
             for item in self.items:
                 menuSelector = i
@@ -166,8 +166,8 @@ class Menu(object):
                 for spaceAfterItem in self.spacers:
                     if item == spaceAfterItem:
                         o.write("%s\n" % ("-" * MENU_LENGTH))
-            o.write("\n%sDEBUG%s\n" % ('='*((MENU_LENGTH-5)/2),
-                                       '='*((MENU_LENGTH-5)/2)))
+            o.write("\n%sDEBUG%s\n" % ('=' * int((MENU_LENGTH - 5) / 2),
+                                       '=' * int((MENU_LENGTH - 5) / 2)))
             o.write("d-  Debug \n")
             o.write("dp- .... Debug - Performance\n")
             o.write("dc- .... Python Console - Do not use unless"
