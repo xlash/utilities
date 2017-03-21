@@ -94,7 +94,7 @@ class Menu(object):
                 setattr(self, key, value)
 
     def addItem(self, menuItem=None, callback=None,
-                description='No description', **kwargs):
+                description='No description', context=None, **kwargs):
         """
         Supports kwargs    'args',
                            'kwargs',
@@ -103,7 +103,7 @@ class Menu(object):
                            'returnToMenu'
         """
         if not menuItem and callback:
-            menuItem = MenuItem(callback, description, **kwargs)
+            menuItem = MenuItem(callback, description, context, **kwargs)
         if not menuItem and not callback:
             raise(MenuItemException("""menuItem or (callback & description)
                                     must be passed at minimal"""))
@@ -161,6 +161,10 @@ class Menu(object):
                 if item.menuSelector:
                     menuSelector = item.menuSelector
                 o.write("%s- %s\n" % (menuSelector, item.description))
+                # Add contextual information to menu
+                if item.context is not None:
+                    for line in str(item.context):
+                        o.write("\t\t %s\n" % (line)),
                 i += 1
                 # Display a spacer after this item if in the spacer list.
                 for spaceAfterItem in self.spacers:
@@ -250,13 +254,14 @@ class MenuItem(object):
 
     ALLOWED_ATTRIBUTES = ['args', 'kwargs', 'menuSelector', 'returnToMenu']
 
-    def __init__(self, callback, description, **kwargs):
+    def __init__(self, callback, description, context, **kwargs):
         """
          Supports kwargs    'args', 'kwargs','menuSelector','returnToMenu'
         """
         self.callback = callback
         self.args = ()
         self.kwargs = {}
+        self.context = context
         self.description = description
         self.menuSelector = None
         self.returnToMenu = False
