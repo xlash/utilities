@@ -176,8 +176,9 @@ class Menu(object):
                         for obj in item.context:
                             for line in str(obj).splitlines():
                                 o.write("\t\t %s\n" % (line)),
-                    for line in str(item.context).splitlines():
-                        o.write("\t\t %s\n" % (line)),
+                    else:
+                        for line in str(item.context).splitlines():
+                            o.write("\t\t %s\n" % (line)),
                 i += 1
                 # Display a spacer after this item if in the spacer list.
                 for spaceAfterItem in self.spacers:
