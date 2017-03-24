@@ -134,7 +134,7 @@ class Menu(object):
             # Add last iterm as the spacer limit
             self.spacers.append(self.items[-1])
 
-    def display(self, debugLocals=None, inputMethod=None):
+    def display(self, debugLocals=None, debugGlobals=None, inputMethod=None):
         """
         Input values
             inputMethod : Stub for Unittests, to replace input()
@@ -145,6 +145,8 @@ class Menu(object):
         """
         if debugLocals is None:
             debugLocals = locals()
+        if debugGlobals is None:
+            debugGlobals = globals()
         o = self.stdout
         if not inputMethod:
             inputMethod = input
@@ -166,7 +168,7 @@ class Menu(object):
                     if isinstance(item.context, list):
                         for obj in item.context:
                             for line in str(obj).splitlines():
-                                o.write("\t\t %s\n" % (line)),       
+                                o.write("\t\t %s\n" % (line)),
                     for line in str(item.context).splitlines():
                         o.write("\t\t %s\n" % (line)),
                 i += 1
@@ -203,7 +205,7 @@ class Menu(object):
                     import code
                     skipCallback = True
                     # for live debugging , with local and global namespace.
-                    code.interact(local=dict(globals(), **debugLocals))
+                    code.interact(local=dict(**debugGlobals, **debugLocals))
                 else:
                     for i in self.items:
                         if (i.menuSelector and
