@@ -163,6 +163,10 @@ class Menu(object):
                 o.write("%s- %s\n" % (menuSelector, item.description))
                 # Add contextual information to menu
                 if item.context is not None:
+                    if isinstance(item.context, list):
+                        for obj in item.context:
+                            for line in str(obj).splitlines():
+                                o.write("\t\t %s\n" % (line)),       
                     for line in str(item.context).splitlines():
                         o.write("\t\t %s\n" % (line)),
                 i += 1
