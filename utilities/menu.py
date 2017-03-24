@@ -205,7 +205,7 @@ class Menu(object):
                     import code
                     skipCallback = True
                     # for live debugging , with local and global namespace.
-                    code.interact(local=dict(**debugGlobals, **debugLocals))
+                    code.interact(local=dict(debugGlobals, **debugLocals))
                 else:
                     for i in self.items:
                         if (i.menuSelector and
