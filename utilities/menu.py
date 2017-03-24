@@ -147,6 +147,13 @@ class Menu(object):
             debugLocals = locals()
         if debugGlobals is None:
             debugGlobals = globals()
+        if not isinstance(debugLocals, dict):
+            debugLocals = locals()
+            logger.error('Menu::display called, but debugLocals is not a dict')
+        if not isinstance(debugGlobals, dict):
+            debugGlobals = locals()
+            logger.error('Menu::display called, but debugGlobals is not a dict')
+
         o = self.stdout
         if not inputMethod:
             inputMethod = input
