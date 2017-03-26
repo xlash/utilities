@@ -26,6 +26,7 @@ from six.moves import map
 from six.moves import range
 from six.moves import zip
 from six.moves import input
+supermenu = None
 
 REGEXP_IPADDRESS_FULL = r'[0-9]{1,3}(?:\.[0-9]{1,3}){3}'
 
@@ -752,6 +753,7 @@ def format(array_of_array, header_array, options=None, stdout=None):
     except:
         logger.error('Cannot print a nice table', exc_info=Logger.is_debug())
 
+
 def dicts_add(x, y):
     '''Given two dicts, merge them into a new dict as a shallow copy.'''
     try:
@@ -864,16 +866,20 @@ def find_line_number_for_x_min_ago(filename, mins_ago, actual_time = None,
         logger.exception("find_line_number_for_x_min_ago::Exception  ")
     return match_ix
 
-#print to stderr output stream
+
+# print to stderr output stream
 def errorprint(textstr = ""):
     if Logger.is_debug():
         logger.exception("ERROR....==> %s" % (textstr) ) 
     else:
         logger.error(textstr)
-#print to stderr output stream
+
+
+# print to stderr output stream
 def stderr(textstr = ""):
     sys.stderr.write("" + str(textstr)  )
     
+
 def raw(text):
     """Returns a raw string representation of text"""
     new_string = ''
@@ -883,6 +889,7 @@ def raw(text):
         except KeyError:
             new_string += char
     return new_string
+
 
 def split(str):
     '''
@@ -894,6 +901,7 @@ def split(str):
         if re.match(r'^ +$',entry) or re.match(r'^$',entry):
             array_of_res.remove(entry)
     return array_of_res
+
 
 # Returns unique array from another array
 def unique(arr, objectCompare=False):
@@ -2332,6 +2340,7 @@ class Application(object):
     """
 
     def __init__(self, preserveArgs=False, **kwargs):
+        global supermenu
         """
         named args:
             preserveArgs <--> Defaults to False. Overrides some argparse 

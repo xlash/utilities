@@ -15,6 +15,7 @@ if utils.pythonVersionMin(majorVersion=2, minorVersion=0, raiseIfNotMet=False,
                           majorVersionMustMatch=True):
     input = raw_input
 
+
 class Menu(object):
     """
     Example :
