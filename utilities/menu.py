@@ -83,8 +83,8 @@ class Menu(object):
         self.spacers = []
         self.name = "Noname"
         self.description = "No description"
-        self.initialPrompt = 'Please select an option:'
-        self.prompt = 'Please select an other option:'
+        self.initialPrompt = 'Please select an option: '
+        self.prompt = 'Please select an other option: '
         self.stdout = sys.stdout
         self.quitMessage = 'Quit'
         self.inputMethod = input
