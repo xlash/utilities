@@ -26,7 +26,7 @@ from six.moves import map
 from six.moves import range
 from six.moves import zip
 from six.moves import input
-supermenu = None
+supermenu2 = None
 
 REGEXP_IPADDRESS_FULL = r'[0-9]{1,3}(?:\.[0-9]{1,3}){3}'
 
@@ -35,8 +35,7 @@ REGEXP_IPADDRESS_FULL = r'[0-9]{1,3}(?:\.[0-9]{1,3}){3}'
 stdout = sys.stdout
 
 # PRELOAD certain modules, used for this own script.
-def pythonVersionMin(majorVersion, minorVersion, raiseIfNotMet=True,
-                     majorVersionMustMatch=True, description=""):
+def pythonVersionMin(majorVersion, minorVersion, raiseIfNotMet=True, majorVersionMustMatch=True, description=""):
     """
     2016-06 GuillaumeNM
     Checks python interpreter version and raise an importError if not met
@@ -450,7 +449,11 @@ try:
 except:
     logger.info('Module simplejson not Available.')
 
-
+try:
+    # PRELOAD menu, to avoid recursion of imports
+    from . import menu as supermenu
+except:
+    logger.error('Module Menu not Available.')
 
 
 def convert_dt_to_utc_dt(dt):
@@ -2340,7 +2343,6 @@ class Application(object):
     """
 
     def __init__(self, preserveArgs=False, **kwargs):
-        global supermenu
         """
         named args:
             preserveArgs <--> Defaults to False. Overrides some argparse 
@@ -2354,8 +2356,6 @@ class Application(object):
             name = <str>
 
         """
-        # PRELOAD menu, to avoid recursion of imports
-        from . import menu as supermenu
 
         logger.debug(os.path.basename(__file__))
         self.useArgParser = True
