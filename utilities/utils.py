@@ -2451,7 +2451,7 @@ class Application(object):
                             action="store_true")
         parser.add_argument("-b", "--batch",
                             help="Program is not running in interactive mode.",
-                            action="store_true",
+                            action="store_false",
                             dest="interactive",
                             default=True)
         self.parser = parser
