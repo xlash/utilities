@@ -199,7 +199,7 @@ class Logger(object):
         if (cls.level == logging.DEBUG or level) and level != logging.DEBUG:
             if not level:
                 level = logging.INFO
-            logger.debug("Debugging off ")
+            # logger.debug("Debugging off ")
         else:
             level = logging.DEBUG
             logger.debug("Mode debugging ")
@@ -294,7 +294,7 @@ def toggle_debug(level = None):
     if ((Logger.level == logging.DEBUG or level) and level != logging.DEBUG):
         if not level:
             level = logging.INFO
-        logger.debug("Debugging off ")
+        # logger.debug("Debugging off ")
     else:
         level = logging.DEBUG
         logger.debug("Mode debugging ")
@@ -1252,7 +1252,7 @@ class intelligent_file_parsing_for(object):
             logger.error('Filename %s not existing' % (filename))
             raise
         except:
-            logger.error( "intelligent_file_parsing_for:init  Unable to verify md5 of first line in file = "+filename )
+            logger.error( "intelligent_file_parsing_for:init  Unable to verify md5 of first line in file = " + filename )
             if Logger.is_debug():
                 logger.exception( 'intelligent_file_parsing_for:init MD5' )
         # ###Check last run file for last run info, md5 and date.
@@ -1283,7 +1283,7 @@ class intelligent_file_parsing_for(object):
                      % (max_byte_count, start_byte_num, self.oldmd5,
                         self.currentmd5))
         # If file was rolled over, start new.
-        if  self.oldmd5 != self.currentmd5 or (max_byte_count +1) < start_byte_num:
+        if  self.oldmd5 != self.currentmd5 or (max_byte_count + 1) < start_byte_num:
             start_byte_num = 1
             results = {}
             logger.debug('?File was rolled over?')
@@ -2356,8 +2356,6 @@ class Application(object):
             name = <str>
 
         """
-
-        logger.debug(os.path.basename(__file__))
         self.useArgParser = True
         self.history = ''
         self.version = ''
@@ -2571,9 +2569,9 @@ class defaultdict(dict):
         except KeyError:
             return self.__missing__(key)
 
-# Try to load a JSON config file if available
 def __loadCfg(configFilename):
     """
+    Try to load a JSON config file if available
     return conf object
     """
     confObj = None
