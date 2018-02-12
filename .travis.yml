@@ -1,0 +1,12 @@
+language: python
+python:
+  - "3.5"
+
+# Infrastructure commands
+sudo: false
+ 
+# command to install dependencies
+install: "python setup.py install"
+
+# command to run tests
+script: pytest
