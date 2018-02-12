@@ -470,6 +470,7 @@ def convert_dt_to_utc_dt(dt):
         dt = dt.replace(tzinfo = tz.tzlocal())
     return dt.astimezone(pytz.UTC)
 
+
 def get_lineprotocol_bool(param):
     """lineprotocol expect boolean values to be string like true or false, not capitalize"""
     if param:
@@ -477,18 +478,21 @@ def get_lineprotocol_bool(param):
     else:
         return "false"
 
+
 def get_lineprotocol_str(string):
     # Escape spaces with \
-    string.replace(' ','\ ')
-    return "\""+string+"\""
+    string.replace(' ', '\ ')
+    return "\"" + string + "\""
+
 
 def unix_time_nanos(dt):
     """Return nanoseconds since epoch"""
     epoch = datetime.datetime.utcfromtimestamp(0)
     return int((dt - epoch).total_seconds() * 1000000)
 
+
 class Options(object):
-    """Class to manage options for other methods. 
+    """Class to manage options for other methods.
     Prefix is_something options will be considered boolean. Like is_debug
     Prefix num_something options will be considered integer.
     Prefix list_something options will be considered list.
@@ -501,13 +505,13 @@ class Options(object):
     utils.Options(json.loads(str))
     """
     def __init__(self, options_dict=None, **kwargs):
-        if options_dict == None:
+        if options_dict is None:
             options_dict = {}
         if isinstance(options_dict, Options):
             # This is to avoid setattr and getattr recursion loop. See Stackoverflow q 16237659
             super(Options, self).__setattr__('attributes', options_dict.attributes)
         elif isinstance(options_dict, dict):
-            ###Parse the debug value
+            # Parse the debug value
             debug = False
             if '_debug' in options_dict:
                 debug = options_dict.pop('_debug')
@@ -521,7 +525,7 @@ class Options(object):
         else:
             super(Options, self).__setattr__('attributes', {})
         for key, value in six.iteritems(kwargs):
-                self.attributes[key]=value
+                self.attributes[key] = value
         # Recursive approach to dictionnary to build multiple Options object
         for key, value in six.iteritems(self.attributes):
             if isinstance(value, dict):
@@ -539,7 +543,7 @@ class Options(object):
         return "Options < Object> attributes = " + str(self.attributes)
 
     def has_key(self, name):
-        """Mimic the the dict method, to replace the options={} everywhere"""
+        """ Mimic the the dict method, to replace the options={} everywhere"""
         if name == 'debug' or name == '_debug' or name == 'is_debug':
             return True
         else:
@@ -548,16 +552,19 @@ class Options(object):
     def __getitem__(self, name):
         return self.__getattr__(name)
 
+    def keys1(self):
+        return self.attributes.keys()
+
     def __setitem__(self, key, value):
-        return self.__setattr__(key,value)
+        return self.__setattr__(key, value)
 
     def __getattr__(self, name):
         if not isinstance(name, str):
             raise TypeError('name must be str. Received + %s'
                             % (name.__class__.__str__))
-        if name[0:2]=='__':
+        if name[0:2] == '__':
             """
-            This is to continue supporting built in methods like help() 
+            This is to continue supporting built in methods like help()
             which calls in __get__ and __base__
             """
             raise AttributeError("__getattr__ object has no attributes")
@@ -566,68 +573,75 @@ class Options(object):
             return self.attributes['_debug']
         elif name in self.attributes:
             return self.attributes[name]
-        elif name[0:3]=='is_':
+        elif name[0:3] == 'is_':
             return False
-        elif name[0:4]=='num_':
+        elif name[0:4] == 'num_':
             return 0
-        elif name[0:5]=='list_':
+        elif name[0:5] == 'list_':
             return []
-        elif name[0:5]=='dict_':
-            return {}           
+        elif name[0:5] == 'dict_':
+            return {}
         else:
             return None
 
     def __setattr__(self, name, value):
-        if name.__class__.__name__!="str" : raise TypeError('name must be str. Received + %s' % (name.__class__.__str__))
+        if name.__class__.__name__ != "str":
+            raise TypeError('name must be str. Received + %s' % (name.__class__.__str__))
         if name == 'debug' or name == '_debug' or name == 'is_debug':
-            if value.__class__.__name__=='bool':
-                self.attributes['_debug']=value
+            if value.__class__.__name__ == 'bool':
+                self.attributes['_debug'] = value
             else:
                 raise AttributeError("Setting debug value with a boolean")
-        elif name[0:3]=='is_' and value.__class__.__name__!='bool':
-            raise AttributeError("Using prefix is_something for a name required a boolean value to be set against. Received : " + str(value))
-        elif name[0:4]=='num_' and value.__class__.__name__!='int':
-            raise AttributeError("Using prefix num_something for a name required a integer value to be set against. Received : " + str(value)) 
-        elif name[0:5]=='list_' and value.__class__.__name__!='list':
-            raise AttributeError("Using prefix list_something for a name required a list value to be set against. Received : " + str(value))
-        elif name[0:5]=='dict_' and value.__class__.__name__!='dict':
-            raise AttributeError("Using prefix dict_something for a name required a dictionnary value to be set against. Received : " + str(value))
+        elif name[0:3] == 'is_' and value.__class__.__name__ != 'bool':
+            raise AttributeError("Using prefix is_something for a name required a boolean"
+                                 " value to be set against. Received : " + str(value))
+        elif name[0:4] == 'num_' and value.__class__.__name__ != 'int':
+            raise AttributeError("Using prefix num_something for a name required a integer"
+                                 " value to be set against. Received : " + str(value))
+        elif name[0:5] == 'list_' and value.__class__.__name__ != 'list':
+            raise AttributeError("Using prefix list_something for a name required a list "
+                                 "value to be set against. Received : " + str(value))
+        elif name[0:5] == 'dict_' and value.__class__.__name__ != 'dict':
+            raise AttributeError("Using prefix dict_something for a name required a "
+                                 "dictionnary value to be set against. Received : " + str(value))
         else:
-            self.attributes[name]=value
+            self.attributes[name] = value
 
-#This is for regexp non-ehttp://code.activestate.com/recipes/65211-convert-a-string-into-a-raw-string/
-escape_dict={'\a':r'\a',
-           '\b':r'\b',
-           '\c':r'\c',
-           '\f':r'\f',
-           '\n':r'\n',
-           '\r':r'\r',
-           '\t':r'\t',
-           '\v':r'\v',
-           '\'':r'\'',
-           '\"':r'\"',
-           '\0':r'\0',
-           '\1':r'\1',
-           '\2':r'\2',
-           '\3':r'\3',
-           '\4':r'\4',
-           '\5':r'\5',
-           '\6':r'\6',
-           '\7':r'\7',
-           '\8':r'\8',
-           '\9':r'\9'}
+
+# This is for regexp non-ehttp://code.activestate.com/recipes/65211-convert-a-string-into-a-raw-string/
+escape_dict = {'\a': r'\a',
+               '\b': r'\b',
+               '\c': r'\c',
+               '\f': r'\f',
+               '\n': r'\n',
+               '\r': r'\r',
+               '\t': r'\t',
+               '\v': r'\v',
+               '\'': r'\'',
+               '\"': r'\"',
+               '\0': r'\0',
+               '\1': r'\1',
+               '\2': r'\2',
+               '\3': r'\3',
+               '\4': r'\4',
+               '\5': r'\5',
+               '\6': r'\6',
+               '\7': r'\7',
+               '\8': r'\8',
+               '\9': r'\9'}
+
 
 def find_files(directory, pattern):
     """Usage find_files('src','*.c')"""
     """stackoverflow q 2186525"""
-    for root,dirs, files in os.walk(directory):
+    for root, dirs, files in os.walk(directory):
         for basename in files:
             if fnmatch.fnmatch(basename, pattern):
                 filename = os.path.join(root, basename)
                 yield filename
-                
 
-def ip_to_hex(ip_addr, reverse = False):
+
+def ip_to_hex(ip_addr, reverse=False):
     """
     Will return hex of ip address.
     reverse will reverse the octet
@@ -653,17 +667,22 @@ def to_d(datetime_string):
 
 
 def printTable(myDict, colList=None):
-   """ Pretty print a list of dictionaries (myDict) as a dynamically sized table.
-   If column names (colList) aren't specified, they will show in random order.
-   Author: Thierry Husson - Use it as you want but don't blame me.
-   """
-   if not colList: colList = list(myDict[0].keys() if myDict else [])
-   myList = [colList] # 1st row = header
-   for item in myDict: myList.append([str(item[col] or '') for col in colList])
-   colSize = [max(map(len,col)) for col in zip(*myList)]
-   formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
-   myList.insert(1, ['-' * i for i in colSize]) # Seperating line
-   for item in myList: print(formatStr.format(*item))
+    """ Pretty print a list of dictionaries (myDict) as a dynamically sized table.
+    If column names (colList) aren't specified, they will show in random order.
+    Author: Thierry Husson - Use it as you want but don't blame me.
+    """
+    if not colList:
+        colList = list(myDict[0].keys() if myDict else [])
+    # 1st row = header
+    myList = [colList]
+    for item in myDict:
+        myList.append([str(item[col] or '') for col in colList])
+    colSize = [max(map(len, col)) for col in zip(*myList)]
+    formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
+    # Seperating line
+    myList.insert(1, ['-' * i for i in colSize])
+    for item in myList:
+        print(formatStr.format(*item))
 
 
 def format(array_of_array, header_array, options=None, stdout=None):
@@ -760,16 +779,16 @@ def format(array_of_array, header_array, options=None, stdout=None):
 def dicts_add(x, y):
     '''Given two dicts, merge them into a new dict as a shallow copy.'''
     try:
-        if x.__class__.__name__=='dict':
+        if x.__class__.__name__ == 'dict':
             z = x.copy()
         else:
-            raise 'Both objects needs to be dicts received x = ' + str(x) + ' & y = '+str(y)
+            raise 'Both objects needs to be dicts received x = ' + str(x) + ' & y = ' + str(y)
         for key in y.keys():
             if key in z:
-                if z[key].__class__.__name__=='dict' and y[key].__class__.__name__=='dict':
+                if z[key].__class__.__name__=='dict' and y[key].__class__.__name__ == 'dict':
                     # recursive call. Dangerous and exciting at the same time.
                     z[key]=dicts_add(z[key],y[key])
-                elif (z[key].__class__.__name__=='int' and y[key].__class__.__name__=='int')  or (z[key].__class__.__name__=='list' and y[key].__class__.__name__=='list'):
+                elif (z[key].__class__.__name__=='int' and y[key].__class__.__name__ == 'int')  or (z[key].__class__.__name__=='list' and y[key].__class__.__name__=='list'):
                     z[key]+=int(y[key])
                 else:
                     try:
@@ -2354,6 +2373,7 @@ class Application(object):
             buildDate = <str>
             description = <str>
             name = <str>
+            configFilename= <filename str>',
 
         """
         self.useArgParser = True
