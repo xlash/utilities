@@ -552,7 +552,7 @@ class Options(object):
     def __getitem__(self, name):
         return self.__getattr__(name)
 
-    def keys1(self):
+    def keys(self):
         return self.attributes.keys()
 
     def __setitem__(self, key, value):
