@@ -21,6 +21,7 @@ import time
 import traceback
 import subprocess
 from pprint import pprint
+import curtsies.fmtfuncs as fmtfuncs
 import six
 from six.moves import map
 from six.moves import range
@@ -552,8 +553,10 @@ class Options(object):
     def __getitem__(self, name):
         return self.__getattr__(name)
 
-    def keys(self):
-        return self.attributes.keys()
+    def __dir__(self):
+        """ Overload method enumeration to display all accessible methods, which
+        are all objects native methods, and all attributes access directly"""
+        return sorted(self.__dict__.keys() + self.attributes.keys())
 
     def __setitem__(self, key, value):
         return self.__setattr__(key, value)
@@ -607,8 +610,91 @@ class Options(object):
         else:
             self.attributes[name] = value
 
+    def _search(self, pattern):
+        results = []
+        try:
+            pattrn = re.compile(pattern)
+        except Exception as e:
+            logger.error('Regular Expression is invalid.')
+        else:
+            results = search(self, pattrn, recursive=True)
+            for res in results:
+                print(res)
 
-# This is for regexp non-ehttp://code.activestate.com/recipes/65211-convert-a-string-into-a-raw-string/
+
+def search(obj, pattern, recursive=True, recursiveDepth=0):
+    """
+    Search an object (list, tuple or dict, for a value, and return a list of matching tuple (string, mathing content)
+    for example, within the following object :
+    my_dict = {"test": 1,
+               "test2": ["searchValue"],
+               "test3": "Hello World",
+               "deepObj": {
+                    "Hello": "World",
+                    "veryDeepObj": "Hello world"
+               }}
+
+    search(my_dict, re.compile('Hello World', re.IGNORECASE), recursive=True)
+        -->(obj[\'test3\'], "Hello World",
+            obj[\'deepObj\'][\'veryDeepObj\'], "Hello world")
+
+    search(my_dict, re.compile('test', re.IGNORECASE), recursive=True)
+        -->[(obj[\'test\'], "test")
+            ,(obj[\'test2\'], "test2")
+            ,(obj[\'test3\'], "test3")]
+    """
+    results = []
+    items = []
+    newDepth = recursiveDepth + 1
+    if isinstance(obj, list):
+        i = 0
+        for item in obj:
+            deepResults = []
+            if isinstance(item, str):
+                if pattern.search(item):
+                    results.append(("[%s]" % (i), item))
+            else:
+                if recursive:
+                    deepResults += search(item, pattern, recursive=True, recursiveDepth=newDepth)
+                    # Adjust deepResults for this key value
+                    for res in deepResults:
+                        newRes = ("[%s]%s" % (i, res[0]), res[1])
+                        results.append(newRes)
+            i += 1
+    # If I debug my utility class, can cause conflicts with isinstance
+    elif obj.__class__.__name__ == 'Options':
+        logger.debug("search():: Option object receive")
+        items = obj.attributes.items()
+    elif isinstance(obj, dict):
+        items = obj.items()
+    if items != []:
+        for key, attr in items:
+            deepResults = []
+            if pattern.search(key):
+                results.append(("[\'%s\']" % (key), key))
+            if isinstance(attr, str) and pattern.search(attr):
+                results.append(("[\'%s\']" % (key), attr))
+            elif recursive and not isinstance(attr, str):
+                deepResults += search(attr, pattern, recursive=True, recursiveDepth=newDepth)
+                # Adjust deepResults for this key value
+                for res in deepResults:
+                    try:
+                        newRes = ("[\'%s\']%s" % (key, res[0]), res[1])
+                        results.append(newRes)
+                    except Exception:
+                        logger.error("ERROR searching object:" + str(res), exc_info=Logger.is_debug())
+    if recursiveDepth == 0:
+        for res in results:
+            try:
+                # SECURITY ISSUE, using eval should not be package in external apps
+                val = eval('obj' + res[0])
+                print("%s" % (val))
+            except Exception:
+                print("%s :: %s" % (res[0], res[1]))
+    return results
+
+
+# http://code.activestate.com/recipes/65211-convert-a-string-into-a-raw-string/
 escape_dict = {'\a': r'\a',
                '\b': r'\b',
                '\c': r'\c',
@@ -666,23 +752,43 @@ def to_d(datetime_string):
     return str(fullDateTime)
 
 
-def printTable(myDict, colList=None):
-    """ Pretty print a list of dictionaries (myDict) as a dynamically sized table.
+def printTable(arrOfDict, colList=None, streamhandler=sys.stdout):
+    """ Pretty print a list of dictionaries (arrOfDict) as a dynamically sized table.
     If column names (colList) aren't specified, they will show in random order.
     Author: Thierry Husson - Use it as you want but don't blame me.
+    if colList is [], will print a list of columns name
     """
-    if not colList:
-        colList = list(myDict[0].keys() if myDict else [])
-    # 1st row = header
-    myList = [colList]
-    for item in myDict:
-        myList.append([str(item[col] or '') for col in colList])
-    colSize = [max(map(len, col)) for col in zip(*myList)]
-    formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
-    # Seperating line
-    myList.insert(1, ['-' * i for i in colSize])
-    for item in myList:
-        print(formatStr.format(*item))
+    printColList = colList == []
+
+    if not colList or colList == []:
+        for i in arrOfDict:
+            newColList = list(arrOfDict[0].keys() if arrOfDict else [])
+            # Keep unique values
+            if not colList:
+                colList = newColList
+            elif colList != newColList:
+                colList = list(set(newColList + colList))
+    if printColList:
+        pprint(colList)
+    else:   
+        # 1st row = header
+        myList = [colList]
+        for item in arrOfDict:
+            # Old one liner
+            # myList.append([str(item[col] or '') for col in colList])
+            itemToAdd = []
+            for col in colList:
+                try:
+                    itemToAdd.append(str(item[col] or ''))
+                except Exception:
+                    itemToAdd.append('---')
+            myList.append(itemToAdd)
+        colSize = [max(map(len, col)) for col in zip(*myList)]
+        formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
+        # Seperating line
+        myList.insert(1, ['-' * i for i in colSize])
+        for item in myList:
+            pprint(formatStr.format(*item), streamhandler)
 
 
 def format(array_of_array, header_array, options=None, stdout=None):
