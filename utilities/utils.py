@@ -27,6 +27,8 @@ from six.moves import map
 from six.moves import range
 from six.moves import zip
 from six.moves import input
+import unicodedata
+
 supermenu2 = None
 
 REGEXP_IPADDRESS_FULL = r'[0-9]{1,3}(?:\.[0-9]{1,3}){3}'
@@ -621,6 +623,15 @@ class Options(object):
             for res in results:
                 print(res)
 
+    def pprint(self, stream=sys.stdout, indent=1):
+        indentLvl = indent + 1
+        myStream = StringIO()
+        for key, item in self.attributes.items():
+            if item.__class__.__name__ == 'Options':
+                item.pprint(stream=myStream, indent=indentLvl)
+            else:
+                pprint(item, stream=myStream, indent=indentLvl)
+        stream.write(myStream.getvalue())
 
 def search(obj, pattern, recursive=True, recursiveDepth=0):
     """
@@ -752,14 +763,30 @@ def to_d(datetime_string):
     return str(fullDateTime)
 
 
-def printTable(arrOfDict, colList=None, streamhandler=sys.stdout):
+def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240):
     """ Pretty print a list of dictionaries (arrOfDict) as a dynamically sized table.
     If column names (colList) aren't specified, they will show in random order.
     Author: Thierry Husson - Use it as you want but don't blame me.
-    if colList is [], will print a list of columns name
-    """
-    printColList = colList == []
+            Modified, enhanced, pimped up by GNM
+    
+    arrOfDict :: list of dicts
 
+    colList :: array of string
+        Will print only the following keys from the dictionairies in arrOfDict
+        ==>if colList is [], will print a list of columns name. Returns nothing.
+
+    streamhandler :: stream object for output. Defaults to sys.stdout
+
+    width :: default print width (if you want to avoid multiline splits, put this high)
+
+
+    Returns :
+        Nothing if colList is []
+        else : return an table to print
+    """
+    if not isinstance(arrOfDict, list):
+        raise Exception("arrOfDict is not a list")
+    printColList = colList == []
     if not colList or colList == []:
         for i in arrOfDict:
             newColList = list(arrOfDict[0].keys() if arrOfDict else [])
@@ -788,7 +815,8 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout):
         # Seperating line
         myList.insert(1, ['-' * i for i in colSize])
         for item in myList:
-            pprint(formatStr.format(*item), streamhandler)
+            pprint(formatStr.format(*item), streamhandler, width=width)
+        return myList
 
 
 def format(array_of_array, header_array, options=None, stdout=None):
@@ -808,6 +836,21 @@ def format(array_of_array, header_array, options=None, stdout=None):
         FILL=MIDDLE
         Will print =====MIDDLE=====
     """
+    # 2018-03-21 GuillaumeNM Normalize before printing (unicode to str)
+    try:
+        for x, arr in enumerate(array_of_array):
+            for y, item in enumerate(arr):
+                if isinstance(item, unicode):
+                    array_of_array[x][y] = unicodedata.normalize('NFKD', item).encode('ascii', 'ignore')
+                else:
+                    array_of_array[x][y] = str(item)
+        for x, item in enumerate(header_array):
+            if isinstance(item, unicode):
+                header_array[x] = unicodedata.normalize('NFKD', item).encode('ascii', 'ignore')
+            else:
+                header_array[x] = str(item)
+    except Exception as e:
+        logger.error('Unable to normalized data')
     try:
         if not options:
             options = {}
