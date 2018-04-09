@@ -778,7 +778,7 @@ def format(array_of_array, header_array, options=None, stdout=None):
             else:
                 header_array[x] = str(item)
     except Exception as e:
-        logger.error('Unable to normalized data')
+        logger.error('utils::format() Unable to normalized data', logGod.is_debug())
     try:
         if not options:
             options = {}
