@@ -1011,10 +1011,8 @@ def unique(arr, objectCompare=False):
     """
     # 2016-04 GuillaumeNM Change to sorted for Unknown exception with 
     # certain classes of object
-    try:
-        return list(set(sorted(arr)))
-    except Exception:
-        return list(set(arr))
+    # 2018-04-08 Previously : return list(set(sorted(arr)))
+   return list(set(arr))
 
 
 class bcolors:
