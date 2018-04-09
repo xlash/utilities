@@ -189,8 +189,7 @@ class Menu(object):
                                        '=' * int((MENU_LENGTH - 5) / 2)))
             o.write("d-  Debug \n")
             o.write("dp- .... Debug - Performance\n")
-            o.write("dc- .... Python Console - Do not use unless"
-                    "you come from Montreal\n")
+            o.write("dc- .... Drop to python Console\n")
             o.write("%s\n" % ("-" * MENU_LENGTH))
             o.write("q- %s\n" % (self.quitMessage))
             o.write("%s\n" % ("=" * MENU_LENGTH))

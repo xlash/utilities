@@ -119,7 +119,7 @@ class Logger(object):
     level = logging.WARNING
     root_logger = logging.getLogger()
 
-    def __init__(self, name):
+    def __init__(self, name, outputToFile=False):
         if name == '':
             raise Exception('empty name')
         root_level = Logger.level
@@ -127,28 +127,31 @@ class Logger(object):
             root_level = logging.WARNING
         self._loggername = name
         if os.getcwd()[-4:] == '/lib':
-            filename = '../log/'+name+'.log'
+            filename = '../log/' + name + '.log'
         else:
-            filename = 'log/'+name+'.log'
+            filename = 'log/' + name + '.log'
         # logging.basicConfig(level = root_level,
         #     format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         #     datefmt = '%Y-%m-%d %H:%M',
         #     filename = filename,
         #     filemode = 'w')
-        self._logger = logging.getLogger(LOGGER_PREFIX+name)
+        self._logger = logging.getLogger(LOGGER_PREFIX + name)
         self._logger.setLevel(root_level)
         # Verify if handlers are already present (to avoid readding multiple)
         if self._logger.handlers == []:
-            # create console handler with a higher log level
-            self.streamhandler = logging.StreamHandler(sys.stdout)
-            self.streamhandler.setLevel(root_level)
-            # create formatter and add it to the handlers
-            formatter = logging.Formatter(fmt='%(asctime)s.%(msecs)03d %(name)-12s '
-                                          '%(levelname)-8s %(message)s',
-                                          datefmt='%Y-%m-%d %H:%M:%S')
-            self.streamhandler.setFormatter(formatter)
-            #
-            self._logger.addHandler(self.streamhandler)
+            if outputToFile:
+                print('utilities::Logger Warning, logging to file not yet implemented')
+            else:
+                # create console handler with a higher log level
+                self.streamhandler = logging.StreamHandler(sys.stdout)
+                self.streamhandler.setLevel(root_level)
+                # create formatter and add it to the handlers
+                formatter = logging.Formatter(fmt='%(asctime)s.%(msecs)03d %(name)-12s '
+                                              '%(levelname)-8s %(message)s',
+                                              datefmt='%Y-%m-%d %H:%M:%S')
+                self.streamhandler.setFormatter(formatter)
+                #
+                self._logger.addHandler(self.streamhandler)
         self.debug = False
 
     @classmethod
@@ -188,16 +191,18 @@ class Logger(object):
 
     @classmethod
     def is_debug(cls):
-        return cls.level == logging.DEBUG
+        return Logger.level == logging.DEBUG
 
     @classmethod
     def isDebug(cls):
         return Logger.is_debug()
 
     @classmethod
-    def toggle_debug_all(cls, level = None):
-        """General debug turn off or on. On root logger.
-        returns True if in DEBUG mode"""
+    def toggle_debug_all(cls, level=None):
+        """
+        General debug turn off or on. On root logger.
+        returns True if in DEBUG mode
+        """
         global logger
         if (cls.level == logging.DEBUG or level) and level != logging.DEBUG:
             if not level:
@@ -227,6 +232,7 @@ class Logger(object):
         if logger_lvl not in [0, 10, 20, 30, 40, 50]:
             raise Exception('Invalid logger_lvl. Expecting logging.DEBUG '
                             '=> CRITICAL, got %s' % (logger_lvl))
+        cls.level = logger_lvl
         for lName, lObj in logging.Logger.manager.loggerDict.items():
             if lName[0:4] == 'GNM.':
                 logging.getLogger(lName).setLevel(logger_lvl)
@@ -265,7 +271,8 @@ class Logger(object):
         return self.streamhandler
 
     def toggle_debug(self, level=None):
-        """Method that toggle global debug flag on or off,
+        """
+        Method that toggle global debug flag on or off,
         and try to adjust logger options
         Returns _debug boolean
         """
@@ -280,90 +287,11 @@ class Logger(object):
             logger.warning("Mode debugging %s " % (self._logger.name))
         # Set logger and handlers level accordingly.
         self._logger.setLevel(level)
+        Logger.level = level
         for handler in self._logger.handlers:
             handler.setLevel(level)
         return self._logger.level == logging.DEBUG
 
-
-def toggle_debug(level = None):
-    """
-    General debug turn off or on. On root logger. returns True if in DEBUG mode
-    """
-    global logger
-    logger.warning('toggle_debug called from:' + get_calling_function_name())
-    logger.warning('DEPRECATED use utils.Logger.toggle_debug_all() in %s'
-                   % (get_calling_function_name()))
-    root_logger = logging.getLogger()
-    if ((Logger.level == logging.DEBUG or level) and level != logging.DEBUG):
-        if not level:
-            level = logging.INFO
-        # logger.debug("Debugging off ")
-    else:
-        level = logging.DEBUG
-        logger.debug("Mode debugging ")
-    root_logger.setLevel(level)
-    logger.setLevel(level)
-    for handler in root_logger.handlers:
-        handler.setLevel(level)
-    for handler in logger.handlers:
-        handler.setLevel(level)
-    # Recursive set
-    Logger.set_loggers_lvl(level)
-    Logger.level = level
-    return root_logger.level == logging.DEBUG
-
-
-def get_logger_lvl():
-    logger.warning('get_logger_lvl called from:' + get_calling_function_name())
-    logger.warning('DEPRECATED method, use Logger.level in %s'
-                   % (get_calling_function_name()))
-    return Logger.level
-
-
-def is_debug():
-    logger.warning('is_debug called from:' + get_calling_function_name())
-    logger.warning('DEPRECATED method, use Logger.is_debug() in %s'
-                   % (get_calling_function_name()))
-    return get_logger_lvl() == logging.DEBUG
-
-
-def set_loggers_lvl(logger_lvl):
-    """
-        GuillaumeNM 2016-05
-        Sets all my logger to the same level. This is also use to address
-        a multiprocess bug, which my new loggers lose their lvl
-    """
-    logger.warning('DEPRECATED use utils.Logger.toggle_debug()')
-    if logger_lvl not in [0, 10, 20, 30, 40, 50]:
-        raise Exception('Invalid logger_lvl. Expecting logging.DEBUG => '
-                        'CRITICAL, got %s' % (logger_lvl))
-    for logger_name, logger_obj in logging.Logger.manager.loggerDict.items():
-        if logger_name[0:4] == 'GNM.':
-            logging.getLogger(logger_name).setLevel(logger_lvl)
-            for handler in logging.getLogger(logger_name).handlers:
-                handler.setLevel(logger_lvl)
-
-
-def get_loggers():
-    logger.warning('DEPRECATED use utils.Logger.get_loggers()')
-    return list(logging.Logger.manager.loggerDict.items())
-
-
-def get_loggers_level():
-    logger.warning('DEPRECATED use utils.Logger.get_loggers_level()')
-    """Will print loggername and level like :
-                        unittests GNM GNM.F5_GTM_verify_dns_v2 10
-                        GNM.lib 10
-                        unittests.F5_GTM_verify_dns 40
-                        GNM.lib.test_utilities 10
-                        GNM.lib.f5utils 10
-                        GNM.lib.utils 10
-    """
-    for logger_name, logger_obj in get_loggers():
-        try:
-            print((logger_name, logger_obj.level))
-        except:
-            pass
 
 logGod = Logger(__name__)
 logger = logGod.logger()
@@ -921,6 +849,8 @@ def format(array_of_array, header_array, options=None, stdout=None):
         if 'returnValue' in options and isinstance(file_handler, StringIO):
             file_handler.seek(0)
             return file_handler.read()
+    except KeyboardInterrupt:
+        logger.info("CTRL+C Received. Interrupting ... ")
     except:
         logger.error('Cannot print a nice table', exc_info=Logger.is_debug())
 
@@ -1081,7 +1011,10 @@ def unique(arr, objectCompare=False):
     """
     # 2016-04 GuillaumeNM Change to sorted for Unknown exception with 
     # certain classes of object
-    return list(set(sorted(arr)))
+    try:
+        return list(set(sorted(arr)))
+    except Exception:
+        return list(set(arr))
 
 
 class bcolors:

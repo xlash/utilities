@@ -1,11 +1,10 @@
 import os
-import sys
-from os import path
-sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 import argparse
-from utilities import utils
+from . import utils3_5 as utils
 import time
 import traceback
+import inspect
+import unittest
 
 logGod = utils.Logger(__name__)
 logger = logGod.logger()
@@ -23,11 +22,13 @@ elif baseFolder[-4:] == '/lib' or baseFolder[-5:] == '/lib/':
 else:
     LIBPATH = baseFolder + '/lib'
 
+
 def get_fixture_path(filename):
-    return LIBPATH+'/tests/fixtures/'+filename
+    return LIBPATH + '/tests/fixtures/' + filename
 
 
 def open_n_parse(filename):
+    logger.warning('DEPRECATED METHOD OF HELL : open_n_parse')
     import f5utils as f5
     f = open(get_fixture_path(filename), 'r')
     config = f.read()
@@ -106,3 +107,49 @@ class PerformanceException(Exception):
     # #To support relative imports when running unittests files
     # if __name__ == '__main__' and __package__ is None:
     #     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+
+
+def unittest_verbosity():
+    """
+    Return the verbosity setting of the currently running unittest
+    program, or 0 if none is running.
+    Unittest must be called via python -m unittest method
+
+    """
+    frame = inspect.currentframe()
+    while frame:
+        self = frame.f_locals.get('self')
+        if isinstance(self, unittest.TestProgram):
+            return self.verbosity
+        frame = frame.f_back
+    return 0
+
+
+def is_in_unittest():
+    """
+    Tells whether we are being called from unittest or not
+    """
+    frame = inspect.currentframe()
+    while frame:
+        self = frame.f_locals.get('self')
+        if isinstance(self, unittest.TestProgram):
+            return True
+        frame = frame.f_back
+    return False
+
+
+def s_unittest_verbosity():
+    """
+    Will set unittest verbosity in sync with utils.Logger
+    """
+    global logGod
+    if is_in_unittest():
+        if unittest_verbosity() == 2:
+            verbosity = 10
+        elif unittest_verbosity() == 1:
+            verbosity = 20
+        else:
+            verbosity = 40
+        logGod.toggle_debug(verbosity)
+    else:
+        raise Exception('Not running in unittest')
