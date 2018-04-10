@@ -777,8 +777,8 @@ def format(array_of_array, header_array, options=None, stdout=None):
                 header_array[x] = unicodedata.normalize('NFKD', item).encode('ascii', 'ignore')
             else:
                 header_array[x] = str(item)
-    except Exception as e:
-        logger.error('utils::format() Unable to normalized data', logGod.is_debug())
+    except Exception:
+        logger.error('utils::format() Unable to normalized data', exc_info=logGod.is_debug())
     try:
         if not options:
             options = {}
