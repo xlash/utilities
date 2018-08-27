@@ -10,6 +10,6 @@ setup(
     author_email='solutiondb@gmail.com',
     description='Utils lib for utils methods',
     url='https://github.com/xlash/utils',
-    install_requires=['decorator', 'python-dateutil', 'pyyaml', 'multiprocessing_logging'],
+    install_requires=['curtsies', 'decorator', 'python-dateutil', 'pyyaml', 'multiprocessing_logging'],
     packages=find_packages(),
 )
