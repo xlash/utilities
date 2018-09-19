@@ -20,7 +20,7 @@ import sys
 import time
 import traceback
 import subprocess
-from pprint import pprint
+from pprint import pprint, pformat
 import curtsies.fmtfuncs as fmtfuncs
 import six
 from six.moves import map
@@ -261,7 +261,7 @@ class Logger(object):
                 print(("%s %s" % (logger_name, logger_obj.level)))
                 for handler in logger_obj.handlers:
                     print(("    %s  :: %s" % (handler.level, handler)))
-            except:
+            except Exception:
                 pass
 
     def logger(self):
@@ -365,25 +365,25 @@ def accepts(exception=ArgTypeException, **types):
 # other imports after Logger definition
 try:
     import argparse
-except:
+except Exception:
     try:
         # For F5 compatibility, force import from local folder
         logger.info('Module Logparse not Available locally. Trying to import local (for device compatibility)')
         from external import argparse
-    except:
+    except Exception:
         logger.info('Module Logparse not Available')
 try:
     # For F5 compatibility, force import from local folder
     # (json not compatible with python 2.4 on F5)
     sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/external/')
     from simplejson.decoder import JSONDecoder as JSONDecoder
-except:
+except Exception:
     logger.info('Module simplejson not Available.')
 
 try:
     # PRELOAD menu, to avoid recursion of imports
     from . import menu as supermenu
-except:
+except Exception:
     logger.error('Module Menu not Available.')
 
 
@@ -548,8 +548,10 @@ class Options(object):
             logger.error('Regular Expression is invalid.')
         else:
             results = search(self, pattrn, recursive=True)
+            i = 0 
             for res in results:
-                print(res)
+                print("%s %s" % (i, res))
+                i += 1
 
     def pprint(self, stream=sys.stdout, indent=1):
         indentLvl = indent + 1
@@ -581,9 +583,17 @@ def search(obj, pattern, recursive=True, recursiveDepth=0):
         -->[(obj[\'test\'], "test")
             ,(obj[\'test2\'], "test2")
             ,(obj[\'test3\'], "test3")]
+
+    [FIXME] What does recursive do??
+    pattern must be a re.compile entity
+
+    [FIXME] Does not support searching for integer values
     """
     results = []
     items = []
+    retype = type(re.compile('hello, world'))
+    if not isinstance(pattern, retype):
+        raise TypeException('pattern must be of type re.compile')
     newDepth = recursiveDepth + 1
     if isinstance(obj, list):
         i = 0
@@ -627,6 +637,9 @@ def search(obj, pattern, recursive=True, recursiveDepth=0):
             try:
                 # SECURITY ISSUE, using eval should not be package in external apps
                 val = eval('obj' + res[0])
+                if isinstance(val, str):
+                    # Limit length to display
+                    val = val[0:100]
                 print("%s" % (val))
             except Exception:
                 print("%s :: %s" % (res[0], res[1]))
@@ -691,8 +704,9 @@ def to_d(datetime_string):
     return str(fullDateTime)
 
 
-def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240):
-    """ Pretty print a list of dictionaries (arrOfDict) as a dynamically sized table.
+def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, compact=True):
+    """
+    Pretty print a list of dictionaries (arrOfDict) as a dynamically sized table.
     If column names (colList) aren't specified, they will show in random order.
     Author: Thierry Husson - Use it as you want but don't blame me.
             Modified, enhanced, pimped up by GNM
@@ -714,7 +728,13 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240):
     """
     if not isinstance(arrOfDict, list):
         raise Exception("arrOfDict is not a list")
+    i = 0
+    for line in arrOfDict:
+        i += 1
+        if not isinstance(line, dict):
+            raise Exception("line %s is not a dict" % (i))
     printColList = colList == []
+    # Define headers
     if not colList or colList == []:
         for i in arrOfDict:
             newColList = list(arrOfDict[0].keys() if arrOfDict else [])
@@ -724,13 +744,48 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240):
             elif colList != newColList:
                 colList = list(set(newColList + colList))
     if printColList:
-        pprint(colList)
-    else:   
-        # 1st row = header
-        myList = [colList]
-        for item in arrOfDict:
-            # Old one liner
-            # myList.append([str(item[col] or '') for col in colList])
+        pprint(colList, stream=streamhandler, width=width)
+        return
+
+    # 1st row = header
+    myList = [colList]
+    for item in arrOfDict:
+        if compact:
+            # Calculate number of line maximum for columns
+            maxLine = 1
+            for col in colList:
+                try:
+                    x = pformat(item[col]).splitlines()
+                    # Avoiding ternary operator for Python <2.5 compatibility
+                    if len(x) > maxLine:
+                        maxLine = len(x)
+                except Exception:
+                    pass
+            # Print each column's lines
+            for i in range(0, maxLine):
+                itemToAdd = []
+                for col in colList:
+                    if col not in colList:
+                        # Display empty on the middle column Line. A 5 maximum line column, should display on the 3rd.
+                        if i == round(maxLine/2) + 1:
+                            itemToAdd.append('---')
+                        else:
+                            itemToAdd.append('')
+                    else:
+                        try:
+                            x = pformat(item[col]).splitlines()
+                            if len(x) > i:
+                                itemToAdd.append(x[i])
+                            else:
+                                itemToAdd.append('')
+                        except Exception:
+                            # Display empty on the middle column Line. A 5 maximum line column, should display on the 3rd.
+                            if i == round(maxLine/2) + 1:
+                                itemToAdd.append('=ERR=')
+                            else:
+                                itemToAdd.append('')
+                myList.append(itemToAdd)
+        else:
             itemToAdd = []
             for col in colList:
                 try:
@@ -738,13 +793,13 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240):
                 except Exception:
                     itemToAdd.append('---')
             myList.append(itemToAdd)
-        colSize = [max(map(len, col)) for col in zip(*myList)]
-        formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
-        # Seperating line
-        myList.insert(1, ['-' * i for i in colSize])
-        for item in myList:
-            pprint(formatStr.format(*item), streamhandler, width=width)
-        return myList
+    colSize = [max(map(len, col)) for col in zip(*myList)]
+    formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
+    # Seperating line
+    myList.insert(1, ['-' * i for i in colSize])
+    for item in myList:
+        pprint(formatStr.format(*item), stream=streamhandler, width=width)
+    return myList
 
 
 def format(array_of_array, header_array, options=None, stdout=None):
@@ -806,7 +861,7 @@ def format(array_of_array, header_array, options=None, stdout=None):
                     if (len(str(array[i])) > col_width and
                        not re.match(r'^FILL.+', str(array[i]))):
                         col_width = len(str(array[i]))
-                except:
+                except Exception:
                     logger.error("format:: Error in following line at i=%s "
                                  "Skipping it. %s" % (i, array))
             formatArr.append(col_width)
@@ -833,7 +888,7 @@ def format(array_of_array, header_array, options=None, stdout=None):
                             len_total = formatArr[i]+1
                             len_left=((formatArr[i]+1-len(middle_word))/2)
                             len_right=((formatArr[i]+1-len(middle_word))/2)
-                    except:
+                    except Exception:
                         logger.debug('Unable to repeat this character. %s' % (str(array[i])))
                         repeator = '@'
                         middle_word = ""
@@ -851,7 +906,7 @@ def format(array_of_array, header_array, options=None, stdout=None):
             return file_handler.read()
     except KeyboardInterrupt:
         logger.info("CTRL+C Received. Interrupting ... ")
-    except:
+    except Exception:
         logger.error('Cannot print a nice table', exc_info=Logger.is_debug())
 
 
@@ -872,11 +927,11 @@ def dicts_add(x, y):
                 else:
                     try:
                         z[key]=int(y[key])+int(z[key])
-                    except:
+                    except Exception:
                         print(("Unable to merge these 2 objects together : " + z.__class__.__name__  + ' ' + str(z[key]) + '::' + y.__class__.__name__ + ' ' + str(y[key] )))
             else:
                 z[key] = y[key]
-    except:
+    except Exception:
         logger.error('dicts_add General Error')
     return z
 
@@ -963,7 +1018,7 @@ def find_line_number_for_x_min_ago(filename, mins_ago, actual_time = None,
         if match_ix != -1 :
             logger.debug("find_line_number_for_x_min_ago :: This is the matching"
                          " line " + line)
-    except:
+    except Exception:
         logger.exception("find_line_number_for_x_min_ago::Exception  ")
     return match_ix
 
@@ -1142,7 +1197,7 @@ def console_width():
         if not _console_width:
             rows, columns = os.popen('stty size', 'r').read().split()
             _console_width = int(columns)
-    except:
+    except Exception:
         # Might be in debugger mode
         _console_width = 100
     return _console_width
@@ -1217,7 +1272,7 @@ def menu(array_of_dict_menu, options = None):
                 item_menu = array_of_dict_menu[int(answer)]
                 try:
                     item_menu['callback_method']()
-                except:
+                except Exception:
                     print("Error in menu callback_method")
                     print(("     ==>" + str(sys.exc_info()[0]) + " :: " + str(sys.exc_info()[1]) + str(traceback.extract_tb(sys.exc_info()[2]))))
             elif answer == 'Q' or answer == 'q':
@@ -1230,7 +1285,7 @@ def menu(array_of_dict_menu, options = None):
             print('\nOh... No parlo Americano.')
             stay_in_main_menu = False
             sys.exit()
-        except:
+        except Exception:
             print("Unhandled major error. Probably a MSWindows IRQ error, propagated through quantum finite space. \n If all goes wrong, do not contact the author of this script, he probably doesn't care anymore about it.\n If you are the author of this script, fix your shit." )
             print(("     ==>" + str(sys.exc_info()[0]) + " :: " + str(sys.exc_info()[1]) + str(traceback.extract_tb(sys.exc_info()[2]))))
 
@@ -1242,7 +1297,7 @@ def strIsDigit(string):
     try:
         int(string)
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -1352,7 +1407,7 @@ class intelligent_file_parsing_for(object):
         except IOError:
             logger.error('Filename %s not existing' % (filename))
             raise
-        except:
+        except Exception:
             logger.error( "intelligent_file_parsing_for:init  Unable to verify md5 of first line in file = " + filename )
             if Logger.is_debug():
                 logger.exception( 'intelligent_file_parsing_for:init MD5' )
@@ -1372,7 +1427,7 @@ class intelligent_file_parsing_for(object):
                 else:
                     logger.warning("Last Run File is empty")
                     start_byte_num = 1
-            except:
+            except Exception:
                 start_byte_num = 1
                 if Logger.is_debug():
                     logger.exception('Cannot parse file for last run time' )
@@ -1398,7 +1453,7 @@ class intelligent_file_parsing_for(object):
                     if content != "":
                         try:
                             self.previous_results = eval(content)
-                        except:
+                        except Exception:
                             logger.error('Error evaluating saved content %s' % (content))
                             self.previous_results={}
                     else:
@@ -1532,7 +1587,7 @@ class monitor_over_time:
                     self.results_dict[date_str]['result']=eval(results_str)
                     self.results_dict[date_str]['date']=dt.fromtimestamp(time.mktime(time.strptime(date_str,TIME_FORMAT)))
                     self.results_dict[date_str]['delete']=False
-                except:
+                except Exception:
                     if self._debug:
                         print(line+"     ==>" + str(sys.exc_info()[0]) + " :: " + str(sys.exc_info()[1]) + str(traceback.extract_tb(sys.exc_info()[2])))
     def get_results(self):
@@ -1616,7 +1671,7 @@ def addressInNetwork(ip, network_n_mask):
             else:
                 print("****WARNING**** Network",netaddr,"not valid with mask /"+bits)
                 return ipaddr_masked == netmask        
-    except:
+    except Exception:
         raise socket.error('illegal IP address string passed to Utils::addressInNetwork')
     return False
 
@@ -1662,7 +1717,7 @@ class LinuxServer(object):
                         stdout.write("OK::" + line)
                     else:
                         stdout.write("NOT_EXEC::" + line)
-            except:
+            except Exception:
                 err += 1
                 logger.error("ERR::" + line, exc_info=Logger.isDebug())
         stdout.write("CronJob::Permissions = OK{" + str(exec_total) + "}BAD{" + str(total-exec_total) + "}ERROR{" + str(err) + "}")
@@ -1700,7 +1755,7 @@ class Hosts(Options):
             finally:
                 try:
                     x.close()
-                except:
+                except Exception:
                     pass
         else:
             self.hostsfile_data = hostsfile_filenameOrStr
@@ -1713,7 +1768,7 @@ class Hosts(Options):
         else:
             try:
                 return self.attributes[key]
-            except:
+            except Exception:
                 matches = []
                 for hostname, ipaddress in six.iteritems(self.attributes):
                     if ipaddress == key:
@@ -1758,7 +1813,7 @@ class Hosts(Options):
                             try:
                                 self.hosts[_host].description = description
                                 # logger.info('Setting description %s to Host %s' % (description, _host))
-                            except:
+                            except Exception:
                                 logger.warning('Host cannot set description to _host=%s' % (_host))
                         break
                     _hostsAliases.append(host_name.upper())
@@ -1772,7 +1827,7 @@ class Hosts(Options):
                         #              % (host_name, host_ip))
                         self.hosts[host_name.upper()] = IP({'ip': host_ip})
                         self[host_name.upper()] = IP({'ip': host_ip})
-        except:
+        except Exception:
             logger.critical('No host file, or error while loading it')
             raise
 
@@ -1926,7 +1981,7 @@ def in_interpreter():
 try:
     from multiprocessing.managers import BaseManager
     class MultiprocessingManager(BaseManager): pass
-except:
+except Exception:
     logger.info('Cannot import multiprocessing, Manager() not available')
     class MultiprocessingManager(object): pass    
 
@@ -1940,7 +1995,7 @@ def _init_worker(loglevel=None):
     """For signal handling. Use by work_in_parallel"""
     try:
         import multiprocessing_logging
-    except:
+    except Exception:
         logger.warning('Cannot import multiprocessing_logging. Multiprocess logging will not work')
     import signal
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -2109,7 +2164,7 @@ def work_in_parallel(worker_method, working_list, args=(), **kwargs):
             try:
                 pool.terminate()
                 pool.join()
-            except:
+            except Exception:
                 pool = None
             raise
         except multiprocessing.TimeoutError:
@@ -2118,7 +2173,7 @@ def work_in_parallel(worker_method, working_list, args=(), **kwargs):
             pool.terminate()
             pool.join()
             pool = None
-        except:
+        except Exception:
             logger.exception('Forcing Thread/process closure')
             pool.terminate()
             pool.join()
@@ -2128,11 +2183,11 @@ def work_in_parallel(worker_method, working_list, args=(), **kwargs):
         pool = None
     except KeyboardInterrupt:
         raise
-    except:
+    except Exception:
         logger.exception('Unexpected closure')
     try:
         output = {'time': end - start}
-    except:
+    except Exception:
         output = {'time': -1}
     return output
 
@@ -2158,7 +2213,7 @@ def timeit(method):
                             (method.__name__, to_print_args, kw, te-ts))
             logger.debug('%r (%r, %r) %2.2f sec'
                          % (method.__name__, to_print_args, kw, te-ts))
-        except:
+        except Exception:
             logger.exception('Error while timing : %r %2.2f sec'
                              % (method.__name__, te-ts))
         return result
@@ -2225,7 +2280,7 @@ def apply_textfsm_template(template_filename='', template_text='', data=''):
     json_bodies = []
     try:
         from external.textfsm import textfsm
-    except: 
+    except Exception: 
         logger.warning('Cannot use textfsm functions without the external.textfsm library')
         return json_bodies
     if template_text != '' and template_filename != '' : raise AttributeError('Cannot have both a template_filename and template_text provided.')
@@ -2235,7 +2290,7 @@ def apply_textfsm_template(template_filename='', template_text='', data=''):
         if not os.path.isfile(template_filename): raise IOError('Invalid File =%s' % (template_filename))
         try:
             template_text = open(template_filename).read()
-        except:
+        except Exception:
             logger.error('Unable to open FH for template_filename=%s' % (template_filename) )
     # Split post processing data
     index = template_text.find('POST_PROCESSING')
@@ -2247,7 +2302,7 @@ def apply_textfsm_template(template_filename='', template_text='', data=''):
         postprocessing_template = ""
     try:
         template_fh = StringIO(textfsm_template)
-    except:
+    except Exception:
         logger.error('Unable to create StringIO FH for text=%s' % (template_text))
 
     if not data or (data.__class__.__str__ == 'str' and not len(data)>0): raise AttributeError('Data is empty ' )
@@ -2263,17 +2318,17 @@ def apply_textfsm_template(template_filename='', template_text='', data=''):
             for key,value in result.items():
                 if key[0:2]=='t_':
                     try: value = float(value)
-                    except: pass
+                    except Exception: pass
                     json_body['tags'][key[2:]] = value
                 elif key[0:2]=='f_':
                     try: value = float(value)
-                    except: pass
+                    except Exception: pass
                     json_body['fields'][key[2:]] = value
                 elif key == 'TIMESTAMP':
                     try:
                         try:
                             dt_object = dt.strptime(value,'%Y-%m-%d%H:%M:%S.%f')
-                        except:
+                        except Exception:
                             dt_object = dt.strptime(value,'%Y-%m-%d %H:%M:%S.%f')
                         utc_dt = convert_dt_to_utc_dt(dt_object)
                         json_body['time'] = dt.strftime(utc_dt,InfluxDB_TIME_FORMAT)
@@ -2283,7 +2338,7 @@ def apply_textfsm_template(template_filename='', template_text='', data=''):
                 else:
                     logger.warning('Column will not be mapped correctly key=%s ,value=%s' % (key,value))
             json_bodies.append(json_body)
-    except:
+    except Exception:
         if Logger.is_debug():
             logger.exception('Unable to build JSON_bodies for text=%s template_text=%s' % (data[0:100]+'...', template_text ))
         else:
@@ -2303,7 +2358,7 @@ def textfsmParse(template, data):
     template_text = ""
     try:
         from external.textfsm import textfsm
-    except: 
+    except Exception: 
         logger.warning('Cannot use textfsm functions without the external.textfsm library')
         return json_bodies
     if isinstance(template, str) and not os.path.isfile(template):
@@ -2315,12 +2370,12 @@ def textfsmParse(template, data):
         try:
             f = open(template)
             template_text = f.read()
-        except:
+        except Exception:
             logger.error('Unable to open FH for template_filename=%s' % (template) )
         # Python 2.4 retro compatibility
         try:
             f.close()
-        except:
+        except Exception:
             pass
     elif isinstance(template, file):
         template_fh = template
@@ -2329,7 +2384,7 @@ def textfsmParse(template, data):
     if not isinstance(template, file):
         try:
             template_fh = StringIO(template_text)
-        except:
+        except Exception:
             logger.error('Unable to create StringIO FH for text=%s' % (template_text))
     textfsm_parser = textfsm.TextFSM(template_fh)
     parsed_text = textfsm_parser.ParseText(data)
@@ -2379,7 +2434,7 @@ def applyPostProcessingTemplate(postProcessingTemplate, json_bodies):
             try:
                 while True:
                     rule_data.remove('')
-            except:
+            except Exception:
                 pass
             key_name = rule_data[0]
             validation_type = rule_data[1]
@@ -2416,7 +2471,7 @@ def applyPostProcessingTemplate(postProcessingTemplate, json_bodies):
                         try:
                             value = re.findall(regexp, tag_or_field)[0]
                             logger.log(5, 'Found match value=%s' % (value)) 
-                        except:
+                        except Exception:
                             logger.debug('Cannot match regexp=%s in tag_or_field=%s ' % (regexp, tag_or_field)) 
                     if key_name[0:2] == 't_':
                         json_body['tags'][key_name[2:]] = value
@@ -2425,7 +2480,7 @@ def applyPostProcessingTemplate(postProcessingTemplate, json_bodies):
                         json_body['fields'][key_name[2:]] = value
                     else:
                         logger.error('Invalid key_name=%s in Postprocessing template=%s' % (key_name, template_filename))
-    except:
+    except Exception:
         if Logger.is_debug():
             logger.exception('Unable to post process due to an unknown error ')
         else:
@@ -2480,7 +2535,7 @@ class Application(object):
             try:
                 frame = inspect.stack()[1]
                 name = frame[1].split('/')[-1].split('.py')[0]
-            except:
+            except Exception:
                 name = 'UnknownApplication'
             self.name = name
         self.settings = Options()
@@ -2525,7 +2580,7 @@ class Application(object):
                 logger.info('Received CTRL+C. Interrupting.')
             except SystemExit:
                 logger.debug('Received SystemExit Exiting.')
-            except:
+            except Exception:
                 if self.interactive:
                     logger.exception('Application, received unhandled crash.')
                     dropTheMic(globals(), locals())
@@ -2583,17 +2638,17 @@ class Application(object):
                 try:
                     f = open(self.settingsFile)
                     newSettings = json.loads(f.read())
-                except:
+                except Exception:
                     logger.exception('Cannot load file')
                     raise
             finally:
                 try:
                     f.close()
-                except:
+                except Exception:
                     pass
             self.settings = Options(newSettings)
             logger.info('Settings loaded')
-        except:
+        except Exception:
             if Logger.is_debug():
                 logger.exception('Cannot import previous settings.')
             else:
@@ -2611,17 +2666,17 @@ class Application(object):
                 try:
                     f = open(self.settingsFile, 'w+')
                     f.write(json.dumps(self.settings.attributes))
-                except:
+                except Exception:
                     logger.exception('Cannot save settings file')
                     raise
                 logger.info('Settings saved')
             finally:
                 try:
                     f.close()
-                except:
+                except Exception:
                     pass
             logger.info('Settings saved')
-        except:
+        except Exception:
             if Logger.is_debug():
                 logger.exception('Cannot export settings.')
             else:
@@ -2687,11 +2742,11 @@ def __loadCfg(configFilename):
                 try:
                     jsonObj = JSONDecoder()
                     jsonCfg = jsonObj.decode(confContent)
-                except:
+                except Exception:
                     logger.error('Cannot parse json in config file :%s'
                                  % (confContent),
                                  exc_info=Logger.isDebug())
-        except:
+        except Exception:
             logger.error('Configuration file was not loaded properly. %s' %
                          (self.config_filename))
     finally:
@@ -2715,14 +2770,14 @@ def dropTheMic(globs, locls, banner='DropTheMic debug mode'):
                           banner=banner)
     except KeyboardInterrupt:
         pass
-    except:
+    except Exception:
         logger.critical('FEEDBACK NOISE.', exc_info=True)
 
 # 2016-08 GuillaumeNM Added global config
 try:
     configFilename = ('%s.config'
                       % (path.dirname(path.dirname(path.abspath(__file__)))))
-except:
+except Exception:
     configFilename = '.config'
 
 conf = __loadCfg(configFilename)
