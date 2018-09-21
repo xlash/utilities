@@ -731,6 +731,8 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
         i += 1
         if not isinstance(line, dict):
             raise TypeError("line %s is not a dict" % (i))
+    if len(arrOfDict) == 0:
+        return
     printColList = colList == []
     # Define headers
     # Bug-2018-09-2 headers loses order
