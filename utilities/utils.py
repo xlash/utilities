@@ -735,7 +735,7 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
     # Define headers
     if not colList or colList == []:
         for i in arrOfDict:
-            newColList = list(arrOfDict[0].keys() if arrOfDict else [])
+            newColList = list(i.keys())
             # Keep unique values
             if not colList:
                 colList = newColList
