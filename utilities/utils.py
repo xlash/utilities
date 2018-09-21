@@ -721,18 +721,16 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
 
     width :: default print width (if you want to avoid multiline splits, put this high)
 
-
     Returns :
-        Nothing if colList is []
-        else : return an table to print
+        Nothing
     """
     if not isinstance(arrOfDict, list):
-        raise Exception("arrOfDict is not a list")
+        raise TypeError("arrOfDict is not a list")
     i = 0
     for line in arrOfDict:
         i += 1
         if not isinstance(line, dict):
-            raise Exception("line %s is not a dict" % (i))
+            raise TypeError("line %s is not a dict" % (i))
     printColList = colList == []
     # Define headers
     if not colList or colList == []:
@@ -795,11 +793,12 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
             myList.append(itemToAdd)
     colSize = [max(map(len, col)) for col in zip(*myList)]
     formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
+    if len(myList) == 0:
+        return
     # Seperating line
     myList.insert(1, ['-' * i for i in colSize])
     for item in myList:
         pprint(formatStr.format(*item), stream=streamhandler, width=width)
-    return myList
 
 
 def format(array_of_array, header_array, options=None, stdout=None):
