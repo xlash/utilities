@@ -733,6 +733,13 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
             raise TypeError("line %s is not a dict" % (i))
     printColList = colList == []
     # Define headers
+    # Bug-2018-09-2 headers loses order
+    # u.printTable([{'a':True},{'a':False,'betwertertgerterg':2819738964987326423804}])
+    # 'betwertertgerterg      | a    '
+    # '---------------------- | -----'
+    # '                       | True '
+    # '2819738964987326423804 | False'
+
     if not colList or colList == []:
         for i in arrOfDict:
             newColList = list(i.keys())
@@ -791,10 +798,10 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
                 except Exception:
                     itemToAdd.append('---')
             myList.append(itemToAdd)
-    colSize = [max(map(len, col)) for col in zip(*myList)]
-    formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
     if len(myList) == 0:
         return
+    colSize = [max(map(len, col)) for col in zip(*myList)]
+    formatStr = ' | '.join(["{{:<{}}}".format(i) for i in colSize])
     # Seperating line
     myList.insert(1, ['-' * i for i in colSize])
     for item in myList:
