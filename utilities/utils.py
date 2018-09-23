@@ -781,7 +781,7 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
                     else:
                         try:
                             x = pformat(item[col]).splitlines()
-                            if len(x) > i:
+                            if i in x and len(x) > i:
                                 itemToAdd.append(x[i])
                             else:
                                 itemToAdd.append('')
