@@ -231,10 +231,12 @@ if pythonVersionMin(2, 7, raiseIfNotMet=False, majorVersionMustMatch=False):
             else:
                 conf = self.name + '.conf'
             with open(conf) as config_file:
-                yaml_config = yaml.load(config_file.read())
+                if os.path.isfile(conf):
+                    yaml_config = yaml.load(config_file.read())
+                else:
+                    logger.debug('No Configuration file was found. %s' % (conf))
         except Exception:
-            logger.error('Configuration file was not loaded properly. %s' %
-                         (conf))
+            logger.error('Configuration file was not loaded properly. %s' % (conf))
         if yaml_config != {}:
             self.config = yaml_config
 
