@@ -10,6 +10,7 @@ Requires Python 2.7
 from .utils import *
 import yaml
 from decorator import decorate
+from utilities.application import *
 
 
 class ArgTypeException(Exception):

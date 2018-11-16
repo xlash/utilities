@@ -5,6 +5,7 @@ import os
 import shutil
 import signal
 import json
+from utilities.application import *
 
 
 django = None
@@ -104,6 +105,7 @@ class timeout:
 class TimeoutError(Exception):
     pass
 
+
 class Ignore(object):
     """
     Class for ignore filesname based on gitignore
@@ -122,7 +124,6 @@ class Ignore(object):
         http://stackoverflow.com/questions/25229592/python-how-to-implement-something-like-gitignore-behavior
         """
         for ignorePattern in cls.ignorePatternLists:
-            # print("ignorePattern=%s filename=%s fnmatch=%s" % (ignorePattern, fileName, fnmatch(fileName, ignorePattern)))
             try:
                 # Whitelisting
                 # if ignorePattern[0] == '!':
@@ -131,9 +132,9 @@ class Ignore(object):
                 # else:
                 if fnmatch.fnmatch(fileName, ignorePattern):
                     return False
-            except:
-                print ('ERROR::Problem with Ignorename filter=%s on file=%s'
-                            % (ignorePattern, fileName))
+            except Exception:
+                print('ERROR::Problem with Ignorename filter=%s on file=%s'
+                      % (ignorePattern, fileName))
         return True
 
     @classmethod
@@ -153,15 +154,15 @@ class Ignore(object):
             if os.path.isfile(ignore):
                 with open(ignore) as o:
                     ignorePatternListCandidate = o.read().splitlines()
-        except:
+        except Exception:
             try:
                 ignorePatternListCandidate = str(strOrFileName).split(',')
-            except:
+            except Exception:
                 raise Exception('GitIgnoreFileLoad: strOrFileName is neither a .gitignore type like file nor exclusion list')
         ignorePatternListCandidate
         for pattern in ignorePatternListCandidate:
-            if len(pattern)>0 and pattern[0] not in ['#', ' ', '!']:
+            if len(pattern) > 0 and pattern[0] not in ['#', ' ', '!']:
                 ignorePatternList.append(pattern)
 
         # Assigns to cls
-        cls.ignorePatternLists =  ignorePatternList
+        cls.ignorePatternLists = ignorePatternList

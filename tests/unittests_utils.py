@@ -344,62 +344,6 @@ class Test_update_progress(unittest.TestCase):
             u.update_progress(i, 'Test Progress')
 
 
-class Test_Application(unittest.TestCase):
-    def test_application_creation(self):
-        app = u.Application(version=1.2, buildDate='1111-11-11')
-        self.assertEqual(app.getVersion(), 'VERSION=1.2 BUILD_DATE=1111-11-11')
-        self.assertEqual(app.name, 'u.unittests')
-
-# testApplication.py not found. Removed
-# class Test_ApplicationModule(unittest.TestCase):
-#     def test_applicationModule_loadup(self):
-#         import testApplication
-#         testApplication.testApplication()
-
-# testApplication.py not found. Removed
-#     def test_applicationModule_exportImport(self):
-#         import testApplication
-#         testApplication.testApplication()
-#         chosenNum = random.randint(0, 10000)
-#         testApplication.app.settings.randomNum = chosenNum
-#         testApplication.app.saveSettings()
-#         testApplication.app.settings.randomNum = random.randint(0, 10000)
-#         self.assertNotEqual(testApplication.app.settings.randomNum, chosenNum)
-#         testApplication.app.loadSettings()
-#         self.assertEqual(testApplication.app.settings.randomNum, chosenNum)
-
-
-# testApplication.py not found. Removed
-# class Test_ApplicationScript(unittest.TestCase):
-#     def test_application_script(self):
-#         # print __file__
-#         status, output = cmds.getstatusoutput('python %s/testApplication.py'
-#                                               % (os.path.dirname(__file__)))
-#         postWarningResult = output.splitlines()[-1]
-#         self.assertEqual(postWarningResult, 'testApplication')
-#         self.assertEqual(status, 0)
-
-#         status, output = cmds.getstatusoutput('python %s/testApplication.py -V'
-#                                               % (os.path.dirname(__file__)))
-#         postWarningResult = output.splitlines()[-1]
-#         self.assertEqual(postWarningResult, 'VERSION=0.1 '
-#                                             'BUILD_DATE=2016-06-08')
-#         self.assertEqual(status, 0)
-
-#         status, output = cmds.getstatusoutput('python %s/testApplication.py -h'
-#                                               % (os.path.dirname(__file__)))
-#         expectedResult = """usage: testApplication.py [-h] [-v] [-V] [-t]
-
-# optional arguments:
-#   -h, --help     show this help message and exit
-#   -v, --verbose  increase output verbosity...repeat up to 3x (-vvv) for
-#                  WARNING,==>INFO==>DEBUG.
-#   -V, --version  Returns the program version
-#   -t, --tests    test entry, optionnal"""
-#         self.assertEqual(output, expectedResult)
-#         self.assertEqual(status, 0)
-
-
 class Test_PythonVersion(unittest.TestCase):
     def test_version_under(self):
         res = u.pythonVersionMin(2, 11, raiseIfNotMet=False,
@@ -468,6 +412,7 @@ class AcceptTest(object):
     def add(self, plusThis):
         return 'added'
 
+
 class Test_accepts_decorator(unittest.TestCase):
 
     def test_globalMethod(self):
@@ -491,6 +436,19 @@ class Test_accepts_decorator(unittest.TestCase):
             a.add(1)
 
 
+class Test_printTable(unittest.TestCase):
+    def test_invalid_dict(self):
+        with self.assertRaises(TypeError):
+            u.printTable(None)
+        with self.assertRaises(TypeError):
+            u.printTable([])
+        with self.assertRaises(TypeError):
+            u.printTable([1, 2, 3])
+        with self.assertRaises(TypeError):
+            u.printTable(None)
+
+    def test_valid_dict(self):
+        u.printTable([{'value1': 1}])
 
 
 if __name__ == '__main__':
