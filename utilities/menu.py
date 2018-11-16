@@ -1,6 +1,7 @@
 import copy
-import re
 import os
+import pdb
+import re
 import sys
 from utilities import utils
 
@@ -70,8 +71,7 @@ class Menu(object):
                     app.menu.display(debugLocals=locals())
                     logger.debug('Menu is refreshed')
             except (KeyboardInterrupt, SystemExit):
-                raiseOWED_ATTRIBUTES = ['name', 'description', 'prompt', 'initialPrompt',
-                                  'app', 'locals', 'stdout', 'quitMessage']
+                raise
     """
 
     def __init__(self, **kwargs):
@@ -210,23 +210,21 @@ class Menu(object):
                     utils.Logger.toggle_debug_all(10)
                     skipCallback = True
                 elif selection == 'dc':
-                    import code
                     skipCallback = True
-                    # for live debugging , with local and global namespace.
-                    code.interact(local=dict(debugGlobals, **debugLocals))
+                    pdb.set_trace()
                 else:
                     for i in self.items:
                         if (i.menuSelector and
                            i.menuSelector.lower() == selection.lower()):
                             item = i
             except KeyboardInterrupt:
-                print ("\nOh... I asked you what you want,"
+                print("\nOh... I asked you what you want,"
                        "and you didn`t answer... :-(")
                 stay_in_main_menu = False
                 raise
             except SystemExit:
                 raise
-            except:
+            except Exception:
                 if utils.Logger.is_debug():
                     logger.exception('Unable to pick correct selection.')
                 else:
