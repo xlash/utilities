@@ -4,10 +4,12 @@ import os
 import sys
 import unittest
 # If launched manually, not via unittest or nose
-if __name__ == '__main__':
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
 from utilities import utils3_5 as u
 from utilities import test_utilities as tu
+print(sys.path)
 import testApplication
 
 
@@ -69,5 +71,4 @@ class Test_ApplicationModule(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    u.Application()
     unittest.main()
