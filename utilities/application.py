@@ -77,6 +77,9 @@ class Application(object):
         if self.preserveArgs:
             self.__preserveArgs()
 
+    def verbosity(self):
+        return self.logGod.level
+
     def loadConfig(self):
         logger.critical('Method not implemented. See utils 2.7 for minimal implementation')
 
