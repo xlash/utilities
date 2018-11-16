@@ -220,6 +220,7 @@ class Application(object):
                                                in MyTestCase
             """)
 
+
 if pythonVersionMin(2, 7, raiseIfNotMet=False, majorVersionMustMatch=False):
     def loadConfig(self):
         import yaml
@@ -230,11 +231,11 @@ if pythonVersionMin(2, 7, raiseIfNotMet=False, majorVersionMustMatch=False):
                 conf = self.configFilename
             else:
                 conf = self.name + '.conf'
-            with open(conf) as config_file:
-                if os.path.isfile(conf):
+            if os.path.isfile(conf):
+                with open(conf) as config_file:
                     yaml_config = yaml.load(config_file.read())
-                else:
-                    logger.debug('No Configuration file was found. %s' % (conf))
+            else:
+                logger.debug('No Configuration file was found. %s' % (conf))
         except Exception:
             logger.error('Configuration file was not loaded properly. %s' % (conf))
         if yaml_config != {}:
