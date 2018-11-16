@@ -2,8 +2,9 @@ import argparse
 import inspect
 import json
 import getpass
-from utilities.utils import Options, dropTheMic, Logger
+from utilities.utils import Options, dropTheMic, Logger, pythonVersionMin
 import logging
+import os
 import sys
 logger = logging.getLogger(__file__)
 
@@ -218,3 +219,27 @@ class Application(object):
   mylib.unittests.py MyTestCase                    - run all 'test*' test methods
                                                in MyTestCase
             """)
+
+print('1')
+if pythonVersionMin(2, 7, raiseIfNotMet=False, majorVersionMustMatch=False):
+    print('2')
+    def loadConfig(self):
+        print('3')
+        import yaml
+        yaml_config = {}
+        conf = ""
+        try:
+            if self.configFilename and os.path.isfile(self.configFilename):
+                conf = self.configFilename
+            else:
+                conf = self.name + '.conf'
+            with open(conf) as config_file:
+                yaml_config = yaml.load(config_file.read())
+        except Exception:
+            logger.error('Configuration file was not loaded properly. %s' %
+                         (conf))
+        if yaml_config != {}:
+            self.config = yaml_config
+
+    # Python 2.7+ code.
+    Application.loadConfig = loadConfig

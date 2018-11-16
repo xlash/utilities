@@ -9,6 +9,5 @@ Requires Python 3.5
 # if __name__ == '__main__':
 #     sys.path.append(path.abspath(__file__))
 # print(sys.path)
-from .utils2_7 import *
-from utilities.application import *
+from utilities.utils2_7 import *
 # Insert Python 3.5 specific methods here !

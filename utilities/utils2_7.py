@@ -119,7 +119,7 @@ def parallel(instance, method_name="", progress=None,
             getattr(instance, method_name)(*args, **kwargs)
     except KeyboardInterrupt:
         raise
-    except:
+    except Exception:
         logger.error(
             'Parallel error for method_name=%s instanceName = %s'
             % (method_name, instance.name),
@@ -136,25 +136,6 @@ def parallel(instance, method_name="", progress=None,
                 progress.value += 1
                 # update_progress(float(progress.value) / progressLen,
                 #                 text_progress=method_name)
-        except:
+        except Exception:
             logger.error('parallel :: cannot update_progress', exc_info=Logger.isDebug())
 
-
-def loadConfig(self):
-    yaml_config = {}
-    conf = ""
-    try:
-        if self.configFilename and os.path.isfile(self.configFilename):
-            conf = self.configFilename
-        else:
-            conf = self.name + '.conf'
-        with open(conf) as config_file:
-            yaml_config = yaml.load(config_file.read())
-    except:
-        logger.error('Configuration file was not loaded properly. %s' %
-                     (conf))
-    if yaml_config != {}:
-        self.config = yaml_config
-
-# Python 2.7+ code.
-Application.loadConfig = loadConfig
