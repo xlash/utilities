@@ -220,11 +220,8 @@ class Application(object):
                                                in MyTestCase
             """)
 
-print('1')
 if pythonVersionMin(2, 7, raiseIfNotMet=False, majorVersionMustMatch=False):
-    print('2')
     def loadConfig(self):
-        print('3')
         import yaml
         yaml_config = {}
         conf = ""
