@@ -214,12 +214,11 @@ class Menu(object):
                     pdb.set_trace()
                 else:
                     for i in self.items:
-                        if (i.menuSelector and
-                           i.menuSelector.lower() == selection.lower()):
+                        if (i.menuSelector and i.menuSelector.lower() == selection.lower()):
                             item = i
             except KeyboardInterrupt:
                 print("\nOh... I asked you what you want,"
-                       "and you didn`t answer... :-(")
+                      "and you didn`t answer... :-(")
                 stay_in_main_menu = False
                 raise
             except SystemExit:
@@ -246,7 +245,10 @@ class Menu(object):
                                          item.description,
                                          item.callback(args=item.args,
                                                        **item.kwargs)))
-            except:
+            except KeyboardInterrupt:
+                logger.debug('CTRL+C handled from =%s of menu =%s'
+                             % (item.callback, item.description))
+            except Exception:
                 if utils.Logger.is_debug():
                     logger.exception('Error in callback method=%s of menu =%s'
                                      % (item.callback, item.description))
