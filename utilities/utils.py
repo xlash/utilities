@@ -21,7 +21,6 @@ import time
 import traceback
 import subprocess
 from pprint import pprint, pformat
-import curtsies.fmtfuncs as fmtfuncs
 import six
 from six.moves import map
 from six.moves import range
