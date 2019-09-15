@@ -236,7 +236,7 @@ if pythonVersionMin(2, 7, raiseIfNotMet=False, majorVersionMustMatch=False):
                 conf = self.name + '.conf'
             if os.path.isfile(conf):
                 with open(conf) as config_file:
-                    yaml_config = yaml.load(config_file.read())
+                    yaml_config = yaml.load(config_file.read(), Loader=yaml.FullLoader)
             else:
                 logger.debug('No Configuration file was found. %s' % (conf))
         except Exception:
