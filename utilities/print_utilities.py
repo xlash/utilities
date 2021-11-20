@@ -28,10 +28,8 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
     if not isinstance(arrOfDict, list):
         raise TypeError("arrOfDict is not a list")
     i = 0
-    for line in arrOfDict:
-        i += 1
-        if not isinstance(line, dict):
-            raise TypeError("line %s is not a dict" % (i))
+    #for line in arrOfDict:
+ 
     if len(arrOfDict) == 0:
         return
     printColList = colList == []
@@ -44,8 +42,12 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
     # '2819738964987326423804 | False'
 
     if not colList or colList == []:
-        for i in arrOfDict:
-            newColList = list(i.keys())
+        i = 0
+        for obj in arrOfDict:
+            i += 1
+            if not isinstance(obj, dict):
+                raise TypeError("line %s is not a dict. Printing without colList requires dictionnaries" % (i))
+            newColList = list(obj.keys())
             # Keep unique values
             if not colList:
                 colList = newColList
@@ -62,8 +64,18 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
             # Calculate number of line maximum for columns
             maxLine = 1
             for col in colList:
+                # GET VALUE
+                item_value = None
                 try:
-                    x = pformat(item[col]).splitlines()
+                    if isinstance(item, dict):
+                        item_value = item[col]
+                    else:
+                        item_value = getattr(item, col)
+                except:
+                    pass
+                # END GET VALUE
+                try:
+                    x = pformat(item_value).splitlines()
                     # Avoiding ternary operator for Python <2.5 compatibility
                     if len(x) > maxLine:
                         maxLine = len(x)
@@ -73,6 +85,16 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
             for i in range(0, maxLine):
                 itemToAdd = []
                 for col in colList:
+                    # GET VALUE
+                    item_value = None
+                    try:
+                        if isinstance(item, dict):
+                            item_value = item[col]
+                        else:
+                            item_value = getattr(item, col)
+                    except:
+                        pass
+                    # END GET VALUE
                     if col not in colList:
                         # Display empty on the middle column Line. A 5 maximum line column, should display on the 3rd.
                         if i == round(maxLine/2) + 1:
@@ -81,7 +103,7 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
                             itemToAdd.append('')
                     else:
                         try:
-                            x = pformat(item[col]).splitlines()
+                            x = pformat(item_value).splitlines()
                             if len(x) > i:
                                 itemToAdd.append(x[i])
                             else:
@@ -96,8 +118,18 @@ def printTable(arrOfDict, colList=None, streamhandler=sys.stdout, width=240, com
         else:
             itemToAdd = []
             for col in colList:
+                # GET VALUE
+                item_value = None
+                if isinstance(item, dict):
+                    item_value = item[col]
+                else:
+                    try:
+                        item_value = getattr(item, col)
+                    except :
+                        pass
+                # END GET VALUE
                 try:
-                    itemToAdd.append(str(item[col] or ''))
+                    itemToAdd.append(str(item_value or ''))
                 except Exception:
                     itemToAdd.append('---')
             myList.append(itemToAdd)
